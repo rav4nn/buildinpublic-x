@@ -1,7 +1,9 @@
 import OpenAI from 'openai';
 
 export async function generateWithOpenAI(prompt: string): Promise<string> {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not set. Add it to your .env file or GitHub Secrets.');
+  const client = new OpenAI({ apiKey });
   const completion = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 4096,
