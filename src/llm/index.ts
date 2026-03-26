@@ -126,15 +126,49 @@ STRICT RULES — violations will make the output unusable:
 ["tweet 1 text", "tweet 2 text", ...]`;
 }
 
+/**
+ * Escape literal control characters inside JSON string values.
+ * Some LLMs output raw newlines inside JSON strings (invalid JSON) — this fixes it.
+ */
+function fixLiteralNewlinesInJson(str: string): string {
+  let result = '';
+  let inString = false;
+  let escaped = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (escaped) {
+      result += ch;
+      escaped = false;
+    } else if (ch === '\\') {
+      result += ch;
+      escaped = true;
+    } else if (ch === '"') {
+      result += ch;
+      inString = !inString;
+    } else if (inString && ch === '\n') {
+      result += '\\n';
+    } else if (inString && ch === '\r') {
+      result += '\\r';
+    } else if (inString && ch === '\t') {
+      result += '\\t';
+    } else {
+      result += ch;
+    }
+  }
+  return result;
+}
+
 /** Parse the LLM response into an array of tweet strings. */
 function parseTweetTexts(raw: string, max: number): string[] {
   const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim();
+  const sanitized = fixLiteralNewlinesInJson(cleaned);
 
   let tweets: string[];
   try {
-    tweets = JSON.parse(cleaned);
+    tweets = JSON.parse(sanitized);
   } catch {
-    const matches = cleaned.match(/"([^"\\]|\\.)*"/g);
+    const matches = sanitized.match(/"([^"\\]|\\.)*"/g);
     if (!matches) throw new Error('Could not parse LLM response as JSON array');
     tweets = matches.map(m => JSON.parse(m));
   }

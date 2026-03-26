@@ -59,6 +59,14 @@ export async function setupCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
+  // Bootstrap config.yml from example if not present
+  const configFile = path.join(process.cwd(), 'config.yml');
+  const configExample = path.join(process.cwd(), 'config.example.yml');
+  if (!fs.existsSync(configFile) && fs.existsSync(configExample)) {
+    fs.copyFileSync(configExample, configFile);
+    console.log('  Created config.yml from config.example.yml — edit it to set your timezone and LLM provider.\n');
+  }
+
   // Read .env
   const envFile = path.join(process.cwd(), '.env');
   if (!fs.existsSync(envFile)) {
