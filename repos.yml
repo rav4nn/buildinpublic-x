@@ -1,0 +1,7 @@
+repos:
+  - owner: your-github-username
+    repo: your-repo-name
+    tweets_per_day: 2
+  # - owner: your-github-username
+  #   repo: another-repo
+  #   tweets_per_day: 1

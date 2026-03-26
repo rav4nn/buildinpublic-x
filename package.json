@@ -1,0 +1,29 @@
+{
+  "name": "buildinpublic-x",
+  "version": "1.0.0",
+  "description": "Turns GitHub commit history into scheduled tweets. Zero server, runs on GitHub Actions.",
+  "scripts": {
+    "fetch": "ts-node src/index.ts fetch",
+    "generate": "ts-node src/index.ts generate",
+    "approve": "ts-node src/index.ts approve",
+    "post": "ts-node src/index.ts post",
+    "status": "ts-node src/index.ts status",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.36.3",
+    "@google/generative-ai": "^0.24.0",
+    "@octokit/rest": "^21.0.2",
+    "dotenv": "^16.4.7",
+    "groq-sdk": "^0.9.1",
+    "js-yaml": "^4.1.0",
+    "openai": "^4.77.0",
+    "twitter-api-v2": "^1.18.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.10.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  }
+}

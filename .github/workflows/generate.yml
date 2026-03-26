@@ -1,0 +1,61 @@
+name: Generate Tweets
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_name:
+        description: "Repo name (must match an entry in repos.yml)"
+        required: true
+        type: string
+      num_tweets:
+        description: "Number of tweets to generate"
+        required: true
+        default: "10"
+        type: string
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch commits
+        run: npm run fetch -- ${{ github.event.inputs.repo_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate tweets
+        run: npm run generate -- ${{ github.event.inputs.repo_name }} --n=${{ github.event.inputs.num_tweets }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+
+      - name: Commit generated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+          git add ${{ github.event.inputs.repo_name }}/commits.json \
+                  ${{ github.event.inputs.repo_name }}/${{ github.event.inputs.repo_name }}-tweets.md || true
+          git diff --staged --quiet && echo "Nothing to commit" || \
+            git commit -m "chore: generate tweets for ${{ github.event.inputs.repo_name }} [skip ci]"
+          git push origin ${{ github.ref_name }}

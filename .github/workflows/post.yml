@@ -1,0 +1,53 @@
+name: Post Scheduled Tweets
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"  # Every 6 hours
+  workflow_dispatch:        # Also allow manual trigger
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Post due tweets
+        run: npm run post
+        env:
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+
+      - name: Update status
+        run: npm run status
+
+      - name: Commit updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "actions@github.com"
+          git pull --rebase origin ${{ github.ref_name }}
+          git add \
+            schedule-twitter.md \
+            STATUS.md \
+            "*/*-tweets.md" \
+            "*/*-posted.md" || true
+          git diff --staged --quiet && echo "Nothing to commit" || \
+            git commit -m "chore: post scheduled tweets [skip ci]"
+          git push origin ${{ github.ref_name }}

@@ -1,0 +1,5 @@
+timezone: "GMT+0"          # Your local timezone offset, e.g. "GMT+5:30" or "GMT-8"
+thread_followup: true
+thread_followup_text: "Posted with buildinpublic-x → github.com/rav4nn/buildinpublic-x"
+max_tweets_per_day: 8     # Hard cap across ALL repos combined
+llm_provider: "anthropic" # anthropic | openai | gemini | deepseek | groq
