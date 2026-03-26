@@ -6,6 +6,7 @@ import { generateCommand } from './commands/generate';
 import { approveCommand } from './commands/approve';
 import { postCommand } from './commands/post';
 import { statusCommand } from './commands/status';
+import { setupCommand } from './commands/setup';
 
 const args = process.argv.slice(2).filter(a => a !== '--');
 const command = args[0];
@@ -18,9 +19,10 @@ async function main(): Promise<void> {
     case 'approve':  await approveCommand(); break;
     case 'post':     await postCommand(); break;
     case 'status':   await statusCommand(); break;
+    case 'setup':    await setupCommand(cmdArgs); break;
     default:
       console.error(`Unknown command: "${command}"`);
-      console.error('Available commands: fetch | generate | approve | post | status');
+      console.error('Available commands: fetch | generate | approve | post | status | setup');
       process.exit(1);
   }
 }

@@ -52,7 +52,22 @@ Twitter's Basic plan allows **500 tweets per month**, which is ~16 tweets/day �
 
 **4. Add API keys as GitHub Secrets**
 
-Go to your fork → Settings → Secrets and variables → Actions → New repository secret.
+Copy `.env.example` to `.env` and fill in your keys:
+
+```bash
+cp .env.example .env
+# edit .env with your keys
+```
+
+Then push all keys to GitHub Secrets in one command (requires the [GitHub CLI](https://cli.github.com)):
+
+```bash
+npm run setup -- your-username/your-fork-name
+```
+
+This reads your `.env` and sets every populated key as a GitHub Secret automatically. Only keys you've filled in get pushed — placeholders are skipped.
+
+**Or add them manually** via your fork → Settings → Secrets and variables → Actions:
 
 | Secret | Where to get it |
 |--------|----------------|
