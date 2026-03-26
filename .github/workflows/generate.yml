@@ -53,7 +53,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
-          git pull --rebase origin ${{ github.ref_name }}
+          git pull --rebase --autostash origin ${{ github.ref_name }}
           git add ${{ github.event.inputs.repo_name }}/commits.json \
                   ${{ github.event.inputs.repo_name }}/${{ github.event.inputs.repo_name }}-tweets.md || true
           git diff --staged --quiet && echo "Nothing to commit" || \
