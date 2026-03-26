@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { findRepo } from '../utils/config';
 import { generateTweets } from '../llm/index';
-import { maxTweetNumber, appendTweets, Tweet } from '../utils/tweets';
+import { maxTweetNumber, readTweets, writeTweets, appendTweets, Tweet } from '../utils/tweets';
 import { CommitsCache } from '../utils/github';
 
 export async function generateCommand(args: string[]): Promise<void> {
@@ -47,7 +47,14 @@ export async function generateCommand(args: string[]): Promise<void> {
   const generated = await generateTweets(repoName, repoConfig.owner, cache.readme, cache.commits, n);
   console.log(`  LLM returned ${generated.length} tweet${generated.length === 1 ? '' : 's'}`);
 
-  const startNumber = maxTweetNumber(repoName) + 1;
+  // Keep SCHEDULED and POSTED tweets; replace all PENDING ones with fresh generated tweets
+  const existing = readTweets(repoName);
+  const preserved = existing.filter(t => t.status !== 'PENDING');
+  const droppedCount = existing.length - preserved.length;
+
+  // Number new tweets after the highest existing number
+  const maxExisting = preserved.reduce((max, t) => Math.max(max, t.number), 0);
+  const startNumber = maxExisting + 1;
   const newTweets: Tweet[] = generated.map((g, i) => ({
     number: startNumber + i,
     status: 'PENDING',
@@ -55,8 +62,11 @@ export async function generateCommand(args: string[]): Promise<void> {
     text: g.text,
   }));
 
-  appendTweets(repoName, newTweets);
+  writeTweets(repoName, [...preserved, ...newTweets]);
 
-  console.log(`✓ Appended ${newTweets.length} tweet${newTweets.length === 1 ? '' : 's'} to ${repoName}/${repoName}-tweets.md`);
+  if (droppedCount > 0) {
+    console.log(`  Replaced ${droppedCount} existing PENDING tweet${droppedCount === 1 ? '' : 's'}`);
+  }
+  console.log(`✓ Wrote ${newTweets.length} tweet${newTweets.length === 1 ? '' : 's'} to ${repoName}/${repoName}-tweets.md`);
   console.log(`  Review and edit the file, then run: npm run approve`);
 }
