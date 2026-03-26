@@ -41,6 +41,13 @@ function detectRepo(): string | null {
 }
 
 export async function setupCommand(args: string[]): Promise<void> {
+  // Configure git merge driver so config.yml is never overwritten by upstream pulls
+  try {
+    execSync('git config merge.ours.driver true', { stdio: 'ignore' });
+  } catch {
+    // Not inside a git repo — skip silently
+  }
+
   // Resolve target repo
   let repo = args[0] ?? detectRepo();
   if (!repo) {
