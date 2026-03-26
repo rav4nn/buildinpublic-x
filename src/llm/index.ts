@@ -120,7 +120,7 @@ STRICT RULES — violations will make the output unusable:
 - Subtle emotion is good: "always a tense moment", "hard to validate upfront", "raises questions"
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
 - If README is missing or too vague and commit messages are also vague, write: "Continuing to build ${repoName} today. [best description from commits available]. What has your experience been with projects like this?"
-- Total tweet length including the blank line and hashtags must be under ${MAX_TWEET_CHARS} characters
+- Total tweet length including the blank line and hashtags must be under 260 characters — count carefully
 - Return a valid JSON array of strings only — no markdown fences, no extra text:
 
 ["tweet 1 text", "tweet 2 text", ...]`;
@@ -177,8 +177,7 @@ function parseTweetTexts(raw: string, max: number): string[] {
 
   return tweets.slice(0, max).map(t => {
     if (t.length > MAX_TWEET_CHARS) {
-      console.warn(`  Warning: tweet truncated from ${t.length} chars: ${t.slice(0, 40)}...`);
-      return t.slice(0, MAX_TWEET_CHARS - 3) + '...';
+      console.warn(`  Warning: tweet #${tweets.indexOf(t) + 1} is ${t.length} chars (over ${MAX_TWEET_CHARS}). Edit it down before posting.`);
     }
     return t;
   });
