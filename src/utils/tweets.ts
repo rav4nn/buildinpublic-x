@@ -16,11 +16,11 @@ function repoDir(repo: string): string {
 }
 
 function tweetsFile(repo: string): string {
-  return path.join(repoDir(repo), `${repo}-tweets.md`);
+  return path.join(repoDir(repo), `${repo}-tweets.txt`);
 }
 
 function postedFile(repo: string): string {
-  return path.join(repoDir(repo), `${repo}-posted.md`);
+  return path.join(repoDir(repo), `${repo}-posted.txt`);
 }
 
 function ensureDir(repo: string): void {
@@ -44,10 +44,12 @@ function serializeBlock(t: Tweet): string {
   return lines.join('\n');
 }
 
-/** Parse {repo}-tweets.md into Tweet objects. Supports both old and new format. */
+/** Parse tweet file content into Tweet objects. Supports both old (.md) and new (.txt) formats. */
 export function parseTweetsMd(content: string): Tweet[] {
   const tweets: Tweet[] = [];
-  const blocks = content.split(/\n---\n/).map(b => b.trim()).filter(Boolean);
+  // Strip comment lines before splitting into blocks
+  const stripped = content.split('\n').filter(l => !l.startsWith('#')).join('\n');
+  const blocks = stripped.split(/\n---\n/).map(b => b.trim()).filter(Boolean);
 
   for (const block of blocks) {
     const lines = block.split('\n');
@@ -104,18 +106,19 @@ export function parseTweetsMd(content: string): Tweet[] {
   return tweets;
 }
 
-/** Serialize Tweet objects back to the clean format. */
+/** Serialize Tweet objects to plain text format. */
 export function serializeTweetsMd(tweets: Tweet[]): string {
   return tweets.map(serializeBlock).join('\n---\n') + (tweets.length ? '\n---\n' : '');
 }
 
-/** Write Tweet objects to {repo}-tweets.md, overwriting the file. */
-export function writeTweets(repo: string, tweets: Tweet[]): void {
+/** Write Tweet objects to {repo}-tweets.txt, overwriting the file. Optional header comment on line 1. */
+export function writeTweets(repo: string, tweets: Tweet[], header?: string): void {
   ensureDir(repo);
-  fs.writeFileSync(tweetsFile(repo), serializeTweetsMd(tweets), 'utf-8');
+  const headerLine = header ? `# ${header}\n` : '';
+  fs.writeFileSync(tweetsFile(repo), headerLine + serializeTweetsMd(tweets), 'utf-8');
 }
 
-/** Append new tweets to {repo}-tweets.md without touching existing content. */
+/** Append new tweets to {repo}-tweets.txt without touching existing content. */
 export function appendTweets(repo: string, newTweets: Tweet[]): void {
   ensureDir(repo);
   const file = tweetsFile(repo);
@@ -134,17 +137,17 @@ export function updateTweetStatus(
 ): void {
   const tweets = readTweets(repo);
   const tweet = tweets.find(t => t.number === tweetNumber);
-  if (!tweet) throw new Error(`Tweet #${tweetNumber} not found in ${repo}-tweets.md`);
+  if (!tweet) throw new Error(`Tweet #${tweetNumber} not found in ${repo}-tweets.txt`);
   tweet.status = status;
   if (scheduled !== undefined) tweet.scheduled = scheduled;
   writeTweets(repo, tweets);
 }
 
-/** Remove a tweet from {repo}-tweets.md and append it to {repo}-posted.md. */
+/** Remove a tweet from {repo}-tweets.txt and append it to {repo}-posted.txt. */
 export function archiveTweet(repo: string, tweetNumber: number, postedAt: string): void {
   const tweets = readTweets(repo);
   const idx = tweets.findIndex(t => t.number === tweetNumber);
-  if (idx === -1) throw new Error(`Tweet #${tweetNumber} not found in ${repo}-tweets.md`);
+  if (idx === -1) throw new Error(`Tweet #${tweetNumber} not found in ${repo}-tweets.txt`);
   const [tweet] = tweets.splice(idx, 1);
   writeTweets(repo, tweets);
 
@@ -169,14 +172,14 @@ export function countPosted(repo: string): number {
   return (content.match(/^Tweet \d+-$/gm) ?? []).length;
 }
 
-/** Read {repo}-tweets.md into Tweet objects. */
+/** Read {repo}-tweets.txt into Tweet objects. */
 export function readTweets(repo: string): Tweet[] {
   const file = tweetsFile(repo);
   if (!fs.existsSync(file)) return [];
   return parseTweetsMd(fs.readFileSync(file, 'utf-8'));
 }
 
-/** Return the highest tweet number used in tweets.md (or 0 if file is empty). */
+/** Return the highest tweet number used in tweets.txt (or 0 if file is empty). */
 export function maxTweetNumber(repo: string): number {
   const tweets = readTweets(repo);
   return tweets.reduce((max, t) => Math.max(max, t.number), 0);

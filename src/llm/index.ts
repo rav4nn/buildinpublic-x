@@ -18,68 +18,20 @@ interface CommitRecord {
   date: string;
 }
 
-interface CommitGroup {
-  date: string;        // "2026-03-17"
-  commits: CommitRecord[];
-  label: string;       // first commit message, used as source
-}
-
 /**
- * Group commits into at most `n` buckets, one per tweet.
- * Commits on the same date stay together where possible.
- * If there are fewer commits than n, returns one group per commit.
- */
-function groupCommits(commits: CommitRecord[], n: number): CommitGroup[] {
-  if (commits.length === 0) return [];
-
-  // First, group by date
-  const byDate: Record<string, CommitRecord[]> = {};
-  for (const c of commits) {
-    const day = c.date.slice(0, 10);
-    (byDate[day] = byDate[day] ?? []).push(c);
-  }
-  const days = Object.keys(byDate).sort();
-
-  // If date-groups fit within n, use them directly
-  if (days.length <= n) {
-    return days.map(day => ({
-      date: day,
-      commits: byDate[day],
-      label: byDate[day][0].message.slice(0, 80),
-    }));
-  }
-
-  // Otherwise, bucket commits evenly into n groups
-  const groupSize = Math.ceil(commits.length / n);
-  const groups: CommitGroup[] = [];
-  for (let i = 0; i < n; i++) {
-    const slice = commits.slice(i * groupSize, (i + 1) * groupSize);
-    if (slice.length === 0) break;
-    groups.push({
-      date: slice[0].date.slice(0, 10),
-      commits: slice,
-      label: slice[0].message.slice(0, 80),
-    });
-  }
-  return groups;
-}
-
-/**
- * Build the LLM prompt. Groups are already split — one tweet per group.
+ * Build the LLM prompt. Always targets exactly n tweets.
+ * When n > commits the LLM is instructed to paraphrase and use README context.
  */
 function buildPrompt(
   repoName: string,
   readme: string,
-  groups: CommitGroup[]
+  commits: CommitRecord[],
+  n: number
 ): string {
-  const n = groups.length;
+  const commitList = commits
+    .map((c, i) => `${i + 1}. [${c.date.slice(0, 10)}] ${c.message}`)
+    .join('\n');
 
-  const groupList = groups.map((g, i) => {
-    const commitLines = g.commits.map(c => `  - ${c.message}`).join('\n');
-    return `Group ${i + 1} (${g.date}):\n${commitLines}`;
-  }).join('\n\n');
-
-  // Derive project description priority: README > commit messages > fallback
   const hasReadme = readme && readme.trim().length > 100;
   const readmeSection = hasReadme
     ? `README (this is your primary source for understanding the project):\n${readme}`
@@ -87,27 +39,36 @@ function buildPrompt(
       ? `README (brief, supplement with commit messages):\n${readme}`
       : `README: (none — infer the project description entirely from commit messages)`;
 
+  const distributionNote = n > commits.length
+    ? `There are only ${commits.length} commit(s) but you must write ${n} tweets. Find multiple angles: architecture decisions, design tradeoffs, what the project name implies, what the README reveals about intent, lessons learned from specific implementation choices. Different tweets can cover the same commit from a different angle.`
+    : n < commits.length
+      ? `There are ${commits.length} commits. Group related commits together so the ${n} tweets each cover a coherent chunk of work.`
+      : `There is one commit per tweet — cover each commit directly.`;
+
   return `You are a senior software engineer writing tweets to share your build journey with your Twitter followers. Your voice is composed, precise, and mildly opinionated. You write like someone who thinks carefully about systems, not like a hype-driven indie hacker.
 
 PROJECT: ${repoName}
 
 ${readmeSection}
 
-COMMIT GROUPS — write exactly one tweet per group, in chronological order:
-${groupList}
+COMMITS (chronological):
+${commitList}
+
+TASK: Write exactly ${n} tweets about this project's build journey, in chronological order.
+${distributionNote}
 
 TWEET FORMAT — follow this structure exactly for every tweet:
 
-Line 1 (factual): project context + what happened from the commits. Keep under 140 chars.
+Line 1 (factual): project context + what happened. Keep under 140 chars.
 [blank line]
-Line 2 (personality): 1-2 sentences of honest reflection on what this involved or revealed, then one specific experience-based question that a senior engineer would find worth answering. Keep under 130 chars.
+Line 2 (personality): 1-2 sentences of honest reflection, then one specific experience-based question a senior engineer would find worth answering. Keep under 130 chars.
 Line 3: hashtags only — always #buildinpublic plus 1 relevant technical tag.
 
 TWEET 1 specifically — start line 1 with:
-"Started building ${repoName} today - [what it does in one clause]. [what you shipped in group 1]."
+"Started building ${repoName} today - [what it does in one clause]. [what you shipped first]."
 
 TWEET 2 onwards — start line 1 with:
-"I'm building ${repoName} - [what it does in one clause]. [what happened in this group's commits]."
+"I'm building ${repoName} - [what it does in one clause]. [what happened in this tweet]."
 
 EXAMPLE of correct output for a RAG framework:
 "I'm building flux-rag - RAG eval framework. Phase 2: chunking, embeddings, vector store, retrieval and eval all connected.\n\nFirst run without mocks. Works fine in isolation but composing everything is a different story. Where do RAG pipelines tend to break for you?\n#buildinpublic #rag"
@@ -121,9 +82,9 @@ STRICT RULES — violations will make the output unusable:
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
 - If README is missing or too vague and commit messages are also vague, write: "Continuing to build ${repoName} today. [best description from commits available]. What has your experience been with projects like this?"
 - Total tweet length including the blank line and hashtags must be under 260 characters — count carefully
-- Return a valid JSON array of strings only — no markdown fences, no extra text:
+- Return a valid JSON array of exactly ${n} objects — no markdown fences, no extra text:
 
-["tweet 1 text", "tweet 2 text", ...]`;
+[{"text": "tweet body", "source": "short label for what this tweet covers"}, ...]`;
 }
 
 /**
@@ -159,33 +120,41 @@ function fixLiteralNewlinesInJson(str: string): string {
   return result;
 }
 
-/** Parse the LLM response into an array of tweet strings. */
-function parseTweetTexts(raw: string, max: number): string[] {
+/** Parse the LLM response into GeneratedTweet objects. */
+function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
   const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim();
   const sanitized = fixLiteralNewlinesInJson(cleaned);
 
-  let tweets: string[];
+  let parsed: unknown[];
   try {
-    tweets = JSON.parse(sanitized);
+    parsed = JSON.parse(sanitized);
   } catch {
-    const matches = sanitized.match(/"([^"\\]|\\.)*"/g);
+    // Fallback: extract all JSON objects from the string
+    const matches = sanitized.match(/\{[^{}]*\}/g);
     if (!matches) throw new Error('Could not parse LLM response as JSON array');
-    tweets = matches.map(m => JSON.parse(m));
+    parsed = matches.map(m => JSON.parse(m));
   }
 
-  if (!Array.isArray(tweets)) throw new Error('LLM did not return a JSON array');
+  if (!Array.isArray(parsed)) throw new Error('LLM did not return a JSON array');
 
-  return tweets.slice(0, max).map(t => {
-    if (t.length > MAX_TWEET_CHARS) {
-      console.warn(`  Warning: tweet #${tweets.indexOf(t) + 1} is ${t.length} chars (over ${MAX_TWEET_CHARS}). Edit it down before posting.`);
+  return parsed.slice(0, n).map((item, i) => {
+    // Handle both {text, source} objects and plain strings (fallback)
+    const text = typeof item === 'object' && item !== null && 'text' in item
+      ? String((item as Record<string, unknown>).text)
+      : String(item);
+    const source = typeof item === 'object' && item !== null && 'source' in item
+      ? String((item as Record<string, unknown>).source)
+      : `tweet ${i + 1}`;
+
+    if (text.length > MAX_TWEET_CHARS) {
+      console.warn(`  Warning: tweet #${i + 1} is ${text.length} chars (over ${MAX_TWEET_CHARS}). Edit it down before posting.`);
     }
-    return t;
+    return { text, source };
   });
 }
 
 /**
- * Generate tweets for a repo using the configured LLM provider.
- * Returns one GeneratedTweet per commit group, with a human-readable source.
+ * Generate exactly n tweets for a repo using the configured LLM provider.
  */
 export async function generateTweets(
   repoName: string,
@@ -197,11 +166,9 @@ export async function generateTweets(
   const config = readConfig();
   const provider = (process.env.LLM_PROVIDER ?? config.llm_provider ?? 'anthropic').toLowerCase();
 
-  const groups = groupCommits(commits, n);
-  const prompt = buildPrompt(repoName, readme, groups);
+  const prompt = buildPrompt(repoName, readme, commits, n);
 
   console.log(`  Using LLM provider: ${provider}`);
-  console.log(`  Grouped ${commits.length} commits into ${groups.length} tweet${groups.length === 1 ? '' : 's'}`);
 
   let raw: string;
   switch (provider) {
@@ -214,10 +181,5 @@ export async function generateTweets(
       throw new Error(`Unknown LLM provider: "${provider}". Valid: anthropic | openai | gemini | deepseek | groq`);
   }
 
-  const texts = parseTweetTexts(raw, groups.length);
-
-  return texts.map((text, i) => ({
-    text,
-    source: groups[i]?.label ?? groups[0].label,
-  }));
+  return parseGeneratedTweets(raw, n);
 }

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { findRepo } from '../utils/config';
 import { generateTweets } from '../llm/index';
-import { maxTweetNumber, readTweets, writeTweets, appendTweets, Tweet } from '../utils/tweets';
+import { readTweets, writeTweets, Tweet } from '../utils/tweets';
 import { CommitsCache } from '../utils/github';
 
 export async function generateCommand(args: string[]): Promise<void> {
@@ -42,7 +42,16 @@ export async function generateCommand(args: string[]): Promise<void> {
     console.warn(`  Warning: only ${cache.commits.length} commit(s) found. Tweets may be sparse — push more commits for better results.`);
   }
 
-  console.log(`Generating tweets for ${repoName} from ${cache.commits.length} commits...`);
+  // Build context summary — shown to user and written as file header
+  const uniqueDays = new Set(cache.commits.map((c: { date: string }) => c.date.slice(0, 10))).size;
+  const ratio = n > cache.commits.length
+    ? ` (${n - cache.commits.length} will be paraphrased from README + commit context)`
+    : n < cache.commits.length
+      ? ` (${cache.commits.length - n} commits will be grouped together)`
+      : '';
+  const contextLine = `${n} tweets requested | ${cache.commits.length} commit${cache.commits.length === 1 ? '' : 's'} across ${uniqueDays} day${uniqueDays === 1 ? '' : 's'}${ratio}`;
+
+  console.log(`\n  ${contextLine}\n`);
 
   const generated = await generateTweets(repoName, repoConfig.owner, cache.readme, cache.commits, n);
   console.log(`  LLM returned ${generated.length} tweet${generated.length === 1 ? '' : 's'}`);
@@ -62,11 +71,11 @@ export async function generateCommand(args: string[]): Promise<void> {
     text: g.text,
   }));
 
-  writeTweets(repoName, [...preserved, ...newTweets]);
+  writeTweets(repoName, [...preserved, ...newTweets], contextLine);
 
   if (droppedCount > 0) {
     console.log(`  Replaced ${droppedCount} existing PENDING tweet${droppedCount === 1 ? '' : 's'}`);
   }
-  console.log(`✓ Wrote ${newTweets.length} tweet${newTweets.length === 1 ? '' : 's'} to ${repoName}/${repoName}-tweets.md`);
+  console.log(`✓ Wrote ${newTweets.length} tweet${newTweets.length === 1 ? '' : 's'} to ${repoName}/${repoName}-tweets.txt`);
   console.log(`  Review and edit the file, then run: npm run approve`);
 }
