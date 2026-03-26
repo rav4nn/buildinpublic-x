@@ -1,8 +1,10 @@
-import { readConfig, formatLocalTime, parseLocalTime } from '../utils/config';
+import { readConfig, formatLocalTime, parseLocalTime, findRepo } from '../utils/config';
 import { readSchedule, updateScheduleStatus } from '../utils/schedule';
 import { archiveTweet } from '../utils/tweets';
 import { postTweet, postReply } from '../utils/twitter';
 import { statusCommand } from './status';
+
+const ATTRIBUTION = 'github.com/rav4nn/buildinpublic-x';
 
 export async function postCommand(): Promise<void> {
   const config = readConfig();
@@ -36,9 +38,13 @@ export async function postCommand(): Promise<void> {
       const tweetId = await postTweet(entry.text);
 
       // Post follow-up reply if enabled
-      if (thread_followup !== false && thread_followup_text) {
+      if (thread_followup !== false) {
         try {
-          await postReply(thread_followup_text, tweetId);
+          const repoConfig = findRepo(entry.repo);
+          const repoUrl = `github.com/${repoConfig.owner}/${entry.repo}`;
+          const attribution = thread_followup_text ?? `~ posted using ${ATTRIBUTION}`;
+          const replyText = `Find this project at ${repoUrl}\n${attribution}`;
+          await postReply(replyText, tweetId);
         } catch (replyErr) {
           // Non-fatal — main tweet already posted
           console.warn(`  Warning: follow-up reply failed: ${(replyErr as Error).message}`);
@@ -47,10 +53,7 @@ export async function postCommand(): Promise<void> {
 
       const postedAt = formatLocalTime(nowUtc, timezone);
 
-      // Mark POSTED in schedule
       updateScheduleStatus(entry.repo, entry.tweetNumber, 'POSTED');
-
-      // Move from tweets.md → posted.md
       archiveTweet(entry.repo, entry.tweetNumber, postedAt);
 
       console.log(`  ✓ Posted`);

@@ -21,7 +21,7 @@ export async function generateCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  findRepo(repoName); // validate repo is in repos.yml
+  const repoConfig = findRepo(repoName);
 
   const cacheFile = path.join(process.cwd(), repoName, 'commits.json');
   if (!fs.existsSync(cacheFile)) {
@@ -42,17 +42,17 @@ export async function generateCommand(args: string[]): Promise<void> {
     console.warn(`  Warning: only ${cache.commits.length} commit(s) found. Tweets may be sparse — push more commits for better results.`);
   }
 
-  console.log(`Generating ${n} tweet${n === 1 ? '' : 's'} for ${repoName} from ${cache.commits.length} commits...`);
+  console.log(`Generating tweets for ${repoName} from ${cache.commits.length} commits...`);
 
-  const tweetTexts = await generateTweets(repoName, cache.readme, cache.commits, n);
-  console.log(`  LLM returned ${tweetTexts.length} tweet${tweetTexts.length === 1 ? '' : 's'}`);
+  const generated = await generateTweets(repoName, repoConfig.owner, cache.readme, cache.commits, n);
+  console.log(`  LLM returned ${generated.length} tweet${generated.length === 1 ? '' : 's'}`);
 
   const startNumber = maxTweetNumber(repoName) + 1;
-  const newTweets: Tweet[] = tweetTexts.map((text, i) => ({
+  const newTweets: Tweet[] = generated.map((g, i) => ({
     number: startNumber + i,
     status: 'PENDING',
-    source: `commits ${cache.commits.slice(0, 5).map(c => c.sha.slice(0, 7)).join(', ')}${cache.commits.length > 5 ? '...' : ''}`,
-    text,
+    source: g.source,
+    text: g.text,
   }));
 
   appendTweets(repoName, newTweets);
