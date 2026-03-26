@@ -24,7 +24,12 @@ export function readRepos(): RepoConfig[] {
 }
 
 export function readConfig(): AppConfig {
-  const file = path.join(process.cwd(), 'config.yml');
+  const primary = path.join(process.cwd(), 'config.yml');
+  const fallback = path.join(process.cwd(), 'config.example.yml');
+  const file = fs.existsSync(primary) ? primary : fallback;
+  if (!fs.existsSync(file)) {
+    throw new Error('No config.yml or config.example.yml found. Run: cp config.example.yml config.yml');
+  }
   const content = fs.readFileSync(file, 'utf-8');
   return yaml.load(content) as AppConfig;
 }
