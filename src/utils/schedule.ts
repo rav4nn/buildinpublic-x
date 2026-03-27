@@ -97,6 +97,8 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
     '#',
     '# Edit the scheduled times below freely, then run: npm run deploy',
     '',
+    '',
+    '',
   ].join('\n');
 }
 

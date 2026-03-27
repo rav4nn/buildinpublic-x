@@ -1,7 +1,15 @@
 import { execSync } from 'child_process';
+import { readConfig } from '../utils/config';
+import { readSchedule, writeSchedule } from '../utils/schedule';
 
 export async function deployCommand(): Promise<void> {
   try {
+    // Refresh the schedule header to reflect any config changes (post_times, auto_generate, etc.)
+    const schedule = readSchedule();
+    if (schedule.length > 0) {
+      writeSchedule(schedule, readConfig());
+    }
+
     execSync('git add -A', { stdio: 'pipe' });
     const staged = execSync('git diff --staged --name-only', { encoding: 'utf-8' }).trim();
     if (!staged) {
