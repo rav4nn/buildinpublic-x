@@ -82,7 +82,7 @@ You need a Twitter developer account to post. Apply at [developer.twitter.com](h
 
 When filling out the use case form, be specific: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."* Vague answers get rejected or delayed.
 
-The Basic plan gives 500 tweets/month (~16/day) which is more than enough.
+Twitter API is pay-per-use. Each tweet costs $0.01, so posting a few tweets a day runs well under $1/month.
 
 ---
 

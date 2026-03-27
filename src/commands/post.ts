@@ -49,7 +49,7 @@ export async function postCommand(): Promise<void> {
           const repoConfig = findRepo(entry.repo);
           const repoUrl = `github.com/${repoConfig.owner}/${entry.repo}`;
           const attribution = thread_followup_text ?? `~ posted using ${ATTRIBUTION}`;
-          const replyText = `Find this project at ${repoUrl}\n${attribution}`;
+          const replyText = `${attribution}\nFind my project at https://${repoUrl}`;
           await postReply(replyText, tweetId);
         } catch (replyErr) {
           // Non-fatal — main tweet already posted
