@@ -8,6 +8,8 @@ export interface RepoConfig {
 }
 
 export interface AppConfig {
+  github_owner: string;
+  repos: string[];
   timezone: string;
   thread_followup: boolean;
   thread_followup_text: string;
@@ -15,13 +17,6 @@ export interface AppConfig {
   post_times: string[];    // ["09:00", "13:00", ...] — up to 8, local timezone
   auto_generate: boolean;  // enable 4x/day cron auto-pickup of new commits
   paused: boolean;         // kill switch
-}
-
-export function readRepos(): RepoConfig[] {
-  const file = path.join(process.cwd(), 'repos.yml');
-  const content = fs.readFileSync(file, 'utf-8');
-  const parsed = yaml.load(content) as { repos: RepoConfig[] };
-  return parsed.repos;
 }
 
 export function readConfig(): AppConfig {
@@ -33,8 +28,9 @@ export function readConfig(): AppConfig {
   }
   const raw = yaml.load(fs.readFileSync(file, 'utf-8')) as Partial<AppConfig>;
 
-  // Defaults for fields added after initial setup
   return {
+    github_owner: raw.github_owner ?? '',
+    repos: raw.repos ?? [],
     timezone: raw.timezone ?? 'GMT+0',
     thread_followup: raw.thread_followup ?? true,
     thread_followup_text: raw.thread_followup_text ?? '~ posted using github.com/rav4nn/buildinpublic-x',
@@ -45,11 +41,26 @@ export function readConfig(): AppConfig {
   };
 }
 
+export function readRepos(): RepoConfig[] {
+  const config = readConfig();
+  if (!config.github_owner) {
+    throw new Error('github_owner not set in config.yml');
+  }
+  if (config.repos.length === 0) {
+    throw new Error('No repos listed in config.yml');
+  }
+  return config.repos.map(repo => ({ owner: config.github_owner, repo }));
+}
+
 export function findRepo(repoName: string): RepoConfig {
-  const repos = readRepos();
-  const found = repos.find(r => r.repo === repoName);
-  if (!found) throw new Error(`Repo "${repoName}" not found in repos.yml`);
-  return found;
+  const config = readConfig();
+  if (!config.github_owner) {
+    throw new Error('github_owner not set in config.yml');
+  }
+  if (!config.repos.includes(repoName)) {
+    throw new Error(`Repo "${repoName}" not found in config.yml repos list`);
+  }
+  return { owner: config.github_owner, repo: repoName };
 }
 
 /**
