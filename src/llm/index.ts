@@ -60,9 +60,10 @@ ${distributionNote}
 TWEET FORMAT — follow this structure exactly for every tweet:
 
 Line 1 (factual): project context + what happened. Keep under 140 chars.
+Line 2 (reflection): 1-2 sentences of honest reflection on what this involved or revealed. No question here.
 [blank line]
-Line 2 (personality): 1-2 sentences of honest reflection, then one specific experience-based question a senior engineer would find worth answering. Keep under 130 chars.
-Line 3: hashtags only — always #buildinpublic plus 1 relevant technical tag.
+Line 3 (question): The experience-based question on its own line — isolated so it stands out.
+Line 4: hashtags only — always #buildinpublic plus 1 relevant technical tag.
 
 TWEET 1 specifically — start line 1 with:
 "Started building ${repoName} today - [what it does in one clause]. [what you shipped first]."
@@ -71,7 +72,7 @@ TWEET 2 onwards — start line 1 with:
 "I'm building ${repoName} - [what it does in one clause]. [what happened in this tweet]."
 
 EXAMPLE of correct output for a RAG framework:
-"I'm building flux-rag - RAG eval framework. Phase 2: chunking, embeddings, vector store, retrieval and eval all connected.\n\nFirst run without mocks. Works fine in isolation but composing everything is a different story. Where do RAG pipelines tend to break for you?\n#buildinpublic #rag"
+"I'm building flux-rag - RAG eval framework. Phase 2: chunking, embeddings, vector store, retrieval and eval all connected.\nFirst run without mocks. Works fine in isolation but composing everything is a different story.\n\nWhere do RAG pipelines tend to break for you?\n#buildinpublic #rag"
 
 STRICT RULES — violations will make the output unusable:
 - NEVER use em dashes (—) anywhere. Use a hyphen (-) or restructure the sentence.
