@@ -13,12 +13,18 @@ export async function approveCommand(): Promise<void> {
     process.exit(1);
   }
 
-  // Collect all PENDING tweets per repo
+  // Collect PENDING tweets, plus SCHEDULED tweets orphaned from a deleted schedule file
+  const existingSchedule = readSchedule();
+  const scheduledKeys = new Set(existingSchedule.map(e => `${e.repo}#${e.tweetNumber}`));
+
   const pendingByRepo: Record<string, Array<{ tweetNumber: number; text: string }>> = {};
   let totalPending = 0;
 
   for (const r of repos) {
-    const tweets = readTweets(r.repo).filter(t => t.status === 'PENDING');
+    const tweets = readTweets(r.repo).filter(t =>
+      t.status === 'PENDING' ||
+      (t.status === 'SCHEDULED' && !scheduledKeys.has(`${r.repo}#${t.number}`))
+    );
     if (tweets.length > 0) {
       pendingByRepo[r.repo] = tweets.map(t => ({ tweetNumber: t.number, text: t.text }));
       totalPending += tweets.length;
@@ -64,7 +70,7 @@ export async function approveCommand(): Promise<void> {
   }
 
   // Merge with existing SCHEDULED entries
-  const existing = readSchedule().filter(e => e.status === 'SCHEDULED');
+  const existing = existingSchedule.filter(e => e.status === 'SCHEDULED');
   const existingKeys = new Set(existing.map(e => `${e.repo}#${e.tweetNumber}`));
   const merged = [
     ...existing,
