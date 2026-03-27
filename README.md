@@ -1,206 +1,153 @@
 # buildinpublic-x
 
-> Turn your GitHub commit history into a stream of authentic developer tweets — automatically, on a schedule, with zero server.
+Turn your GitHub commit history into scheduled #buildinpublic tweets — automatically, with no server.
 
-Fork this repo, point it at your projects, add five secrets, and your build journey tweets itself.
-
----
-
-## What it does
-
-`buildinpublic-x` reads your commit history and README, sends them to an LLM of your choice, and generates technically specific, first-person tweets like:
-
-> *"Replaced my polling loop with webhooks — cut server load by 60% and response time from 2s to 80ms. Turns out I was just making things harder. #buildinpublic #nodejs"*
-
-Tweets sit in a Markdown file you can edit before they go live. A cron-based GitHub Actions workflow posts them on your schedule. Everything lives in the repo — no database, no server, no monthly bill.
+Fork this repo, add your keys, and your build journey posts itself to X.
 
 ---
 
-## Setup (5 steps)
+## How it works
+
+Point it at any GitHub repo. It reads your commits and README, sends them to an LLM, and generates tweets like:
+
+> *"Building flux-rag: Phase 2 done — chunking, embeddings, vector store, retrieval all connected. First run without mocks. Composing pieces is harder than building them.*
+>
+> *What's your primary bottleneck when connecting RAG stages?*
+> *#buildinpublic #rag"*
+
+You review the tweets, approve them, and they post on your schedule via GitHub Actions. No database. No server. No monthly bill.
+
+---
+
+## Setup
 
 **1. Fork this repo**
 
-Click **Fork** on GitHub. Clone your fork locally.
+Click **Fork** on GitHub. Then go to your fork → **Actions** → enable workflows.
 
-**2. Configure your repos**
+Also go to Settings → Actions → General → Workflow permissions → select **Read and write permissions**.
 
-Edit `repos.yml`:
+**2. Add your API keys as GitHub Secrets**
 
-```yaml
-repos:
-  - owner: your-github-username
-    repo: your-repo-name
-    tweets_per_day: 2
-```
-
-Edit `config.yml` to set your timezone and preferred LLM:
-
-```yaml
-timezone: "GMT+5:30"
-max_tweets_per_day: 8
-llm_provider: "anthropic"
-```
-
-**3. Get your Twitter (X) API keys**
-
-1. Apply for a developer account at [developer.twitter.com](https://developer.twitter.com)
-2. Fill out the use case form. Be honest and specific — something like: *"I'm building a personal automation to post my GitHub commits and project updates to my X account. This is for personal use only, no data scraping."* Vague answers get rejected or delayed.
-3. Create a new App — set permissions to **Read and Write**
-4. Under **Keys and Tokens**, generate all four keys: API Key, API Secret, Access Token, Access Token Secret
-
-Twitter's Basic plan allows **500 tweets per month**, which is ~16 tweets/day — more than enough.
-
-**4. Add API keys as GitHub Secrets**
-
-Copy `.env.example` to `.env` and fill in your keys:
+Copy `.env.example` to `.env` and fill in your keys, then push them all at once:
 
 ```bash
 cp .env.example .env
 # edit .env with your keys
-```
-
-Then push all keys to GitHub Secrets in one command (requires the [GitHub CLI](https://cli.github.com)):
-
-```bash
 npm run setup -- your-username/your-fork-name
 ```
 
-This reads your `.env` and sets every populated key as a GitHub Secret automatically. Only keys you've filled in get pushed — placeholders are skipped.
-
-**Or add them manually** via your fork → Settings → Secrets and variables → Actions:
+Or add them manually in your fork → Settings → Secrets and variables → Actions:
 
 | Secret | Where to get it |
 |--------|----------------|
-| `X_API_KEY` | Twitter Developer Portal |
+| `X_API_KEY` | [developer.twitter.com](https://developer.twitter.com) — create an app with Read & Write |
 | `X_API_SECRET` | Same |
 | `X_ACCESS_TOKEN` | Same (Keys and Tokens tab) |
 | `X_ACCESS_TOKEN_SECRET` | Same |
 | `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
 | `OPENAI_API_KEY` | [platform.openai.com](https://platform.openai.com) |
-| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) |
+| `GEMINI_API_KEY` | [aistudio.google.com](https://aistudio.google.com) — free tier available |
 | `DEEPSEEK_API_KEY` | [platform.deepseek.com](https://platform.deepseek.com) |
-| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) |
+| `GROQ_API_KEY` | [console.groq.com](https://console.groq.com) — free tier available |
 
-You only need the LLM key matching your `llm_provider` setting, plus all four X keys.
+You only need the key for your chosen LLM provider, plus all four X keys.
 
-**5. Enable GitHub Actions on your fork**
+> **Twitter API:** Apply at [developer.twitter.com](https://developer.twitter.com). The Basic plan gives 500 tweets/month (~16/day). When filling out the use case form, be specific: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
 
-GitHub disables scheduled workflows on forks by default. After forking:
+**3. Configure**
 
-1. Go to your fork → **Actions** tab → click **"I understand my workflows, go ahead and enable them"**
-2. Go to Settings → Actions → General → scroll to **Workflow permissions** → select **Read and write permissions** → Save
+Copy `config.example.yml` to `config.yml` and edit it:
 
-Then trigger your first run: Actions → **Generate Tweets** → Run workflow. Enter your repo name and number of tweets (e.g. `20`).
+```yaml
+github_owner: "your-github-username"
+repos:
+  - your-repo-name
+  - another-repo
 
-The workflow fetches commits, runs the LLM, and commits `{repo}/{repo}-tweets.md` back to your repo. Review and edit that file, then run `npm run approve` (or locally — see below). Tweets will post automatically every 6 hours.
+timezone: "GMT+5:30"
+llm_provider: "gemini"       # anthropic | openai | gemini | deepseek | groq
+auto_generate: false          # true = picks up new commits 4x/day automatically
+paused: false
 
----
-
-## Tweeting as you build (starting from an empty repo)
-
-You don't need a finished project. This tool is designed for sharing progress as you build:
-
-```bash
-# Day 1: push your first few commits, then:
-npm run fetch -- my-repo
-npm run generate -- my-repo --n=3
-
-# Day 5: pushed more commits, generate more tweets:
-npm run fetch -- my-repo          # only fetches new commits since last time
-npm run generate -- my-repo --n=5 # appends to existing tweets file
-
-# Approve and schedule everything at once:
-npm run approve
+post_times:
+  - "09:00"
+  - "13:00"
+  - "17:00"
+  - "21:00"
 ```
 
-The fetch is always incremental — it only calls the GitHub API for commits you haven't seen yet. `commits.json` is committed to your repo so GitHub Actions picks it up without redundant API calls.
+**4. Generate your first tweets**
 
-> If your repo has fewer than 3 commits, the tool will warn you. Push a few real commits first for meaningful tweets.
+Go to Actions → **Generate Tweets** → Run workflow. Enter your repo name and how many tweets to generate.
+
+The workflow commits a `{repo}/{repo}-tweets.txt` file back to your repo. Review it, edit anything you want, then run:
+
+```bash
+git pull
+npm run approve   # assigns post times, creates schedule-twitter.txt
+npm run deploy    # pushes — tweets are now live in the queue
+```
+
+Tweets post automatically. The `post.yml` workflow runs every 6 hours and posts anything due.
 
 ---
 
 ## Local workflow
 
 ```bash
-# 1. Install dependencies
 npm install
-cp .env.example .env   # fill in your keys
+cp .env.example .env               # fill in your keys
+cp config.example.yml config.yml   # edit with your repos + settings
 
-# 2. Fetch commits (only new ones after first run)
-npm run fetch -- my-repo
+# Generate tweets for a repo
+npm run generate -- my-repo --n=10
 
-# 3. Generate tweets from commit history
-npm run generate -- my-repo --n=20
+# Review my-repo/my-repo-tweets.txt, edit freely
 
-# 4. Review / edit my-repo/my-repo-tweets.md
-
-# 5. Schedule all PENDING tweets
+# Schedule and deploy
 npm run approve
-
-# 6. Post due tweets + update STATUS.md
-npm run post
-
-# Check current status anytime
-npm run status
+npm run deploy
 ```
 
 ---
 
-## Tweet file format
+## Commands
 
-```markdown
-## Tweet 1
-**Status:** PENDING
-**Source:** commits abc1234, def5678
-Replaced my polling loop with webhooks — cut server load by 60% and
-response time from 2s to 80ms. #buildinpublic #nodejs
----
-```
-
-Statuses: `PENDING` → `SCHEDULED` (after `approve`) → `POSTED` (after `post`)
-
-You can edit the tweet text at any point while it's still PENDING or SCHEDULED.
+| Command | What it does |
+|---------|-------------|
+| `npm run generate -- <repo> --n=<count>` | Fetch commits + generate N tweets |
+| `npm run approve` | Assign post times, create `schedule-twitter.txt` |
+| `npm run deploy` | Validate schedule, commit and push |
+| `npm run post` | Post due tweets (runs automatically via Actions) |
+| `npm run auto-generate` | Check for new commits, generate + schedule if found |
 
 ---
 
-## Switching LLM providers
+## Editing the schedule
 
-Change `llm_provider` in `config.yml` and add the corresponding API key as a secret.
+`schedule-twitter.txt` is a plain text file in your repo. Edit it freely — change times, reorder, delete entries — then run `npm run deploy`.
+
+`npm run deploy` validates before pushing and will tell you if anything looks wrong (past dates, tweets over 280 chars, unknown repos, etc.).
+
+---
+
+## LLM providers
 
 | Provider | Model | Notes |
 |----------|-------|-------|
-| `anthropic` | claude-haiku-4-5 | Default. Fast and cheap. |
-| `openai` | gpt-4o-mini | Good quality, reasonable cost. |
-| `gemini` | gemini-2.0-flash | Fast, generous free tier. |
-| `deepseek` | deepseek-chat | Very cheap, strong reasoning. |
-| `groq` | llama-3.1-8b-instant | Fastest, free tier available. |
+| `anthropic` | claude-haiku-4-5 | Fast and cheap |
+| `openai` | gpt-4o-mini | Good quality |
+| `gemini` | gemini-2.5-flash | Free tier available |
+| `deepseek` | deepseek-chat | Very cheap |
+| `groq` | llama-3.1-8b-instant | Free tier, fastest |
+
+Change `llm_provider` in `config.yml` and make sure the matching secret is set.
 
 ---
 
-## GitHub Actions workflows
+## Auto-generate (hands-free mode)
 
-### `generate.yml` — manual trigger only
-Runs `fetch` + `generate` and commits the output back. Triggered from Actions → Generate Tweets → Run workflow. Inputs: repo name, number of tweets.
+Set `auto_generate: true` in `config.yml` and deploy. Whenever you push new commits to a tracked repo, the tool picks them up automatically (4x/day), generates tweets, schedules them, and deploys — no manual steps needed.
 
-### `post.yml` — runs every 6 hours + manual trigger
-Runs `post` + `status` and commits all updated Markdown files back. To change the posting frequency, edit the `cron` expression in [`.github/workflows/post.yml`](.github/workflows/post.yml).
-
-Both workflows use `git pull --rebase` before committing back, so they won't conflict if you edit files while Actions is running.
-
----
-
-## Example tweet quality
-
-Generated from real commit messages — not summaries:
-
-> *"Switched from SQLite to Postgres today. Wasn't strictly necessary but the query planner is doing things SQLite just can't. Joins are 4x faster on the dashboard. #buildinpublic #postgres"*
-
-> *"Finally fixed the race condition in the sync engine. The fix was one line. The debugging took 3 days. Concurrent writes now pass all load tests. #buildinpublic"*
-
-> *"Shipped the first working version of the expense categorization model. 87% accuracy on test set. Used a simple Naive Bayes — ML isn't always the answer but here it genuinely is. #buildinpublic #ml"*
-
----
-
-## Contributing
-
-PRs welcome. Open an issue first for large changes.
+Use the kill switch anytime: set `paused: true` in `config.yml`, run `npm run deploy`.
