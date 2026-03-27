@@ -47,7 +47,7 @@ Everything runs from your repo.
 ## How it works
 
 1. Fork this repo
-2. Add your API keys (LLM + X)
+2. Add your API keys (LLM + X or Bluesky)
 3. Generate tweets from your commits
 4. Review → approve → done
 
@@ -76,13 +76,24 @@ tweets get generated and scheduled automatically
 
 ---
 
-## Twitter API
+## Platforms
 
-You need a Twitter developer account to post. Apply at [developer.twitter.com](https://developer.twitter.com) — approval usually takes 1–3 days.
+### X (Twitter)
 
-When filling out the use case form, be specific: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."* Vague answers get rejected or delayed.
+Apply for a developer account at [developer.twitter.com](https://developer.twitter.com) — approval takes 1–3 days. When filling out the use case form, be specific: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
 
-Twitter API is pay-per-use. Each tweet costs $0.01, so posting a few tweets a day runs well under $1/month.
+API is pay-per-use. Each tweet costs $0.01, so a few tweets a day runs well under $1/month.
+
+### Bluesky (free)
+
+No approval needed. Go to Bluesky → Settings → Privacy and Security → App Passwords → Add App Password. Copy the generated password — that's your `BLUESKY_APP_PASSWORD`. Your identifier is your handle e.g. `yourname.bsky.social`.
+
+To enable, add to `config.yml`:
+
+```yaml
+platforms:
+  - bluesky   # or add both x and bluesky
+```
 
 ---
 

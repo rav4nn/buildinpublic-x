@@ -10,6 +10,7 @@ export interface RepoConfig {
 export interface AppConfig {
   github_owner: string;
   repos: string[];
+  platforms: string[];     // ["x", "bluesky"] — which platforms to post to
   timezone: string;
   thread_followup: boolean;
   thread_followup_text: string;
@@ -31,6 +32,7 @@ export function readConfig(): AppConfig {
   return {
     github_owner: raw.github_owner ?? '',
     repos: raw.repos ?? [],
+    platforms: raw.platforms ?? ['x'],
     timezone: raw.timezone ?? 'GMT+0',
     thread_followup: raw.thread_followup ?? true,
     thread_followup_text: raw.thread_followup_text ?? '~ posted using github.com/rav4nn/buildinpublic-x',

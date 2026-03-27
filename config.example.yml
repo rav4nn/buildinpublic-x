@@ -3,6 +3,10 @@ repos:
   - your-repo-name
   # - another-repo
 
+platforms:                  # Which platforms to post to
+  - x                       # paid — $0.01/tweet (requires X_API_KEY etc.)
+  # - bluesky               # free (requires BLUESKY_IDENTIFIER + BLUESKY_APP_PASSWORD)
+
 timezone: "GMT+0"          # Your local timezone offset, e.g. "GMT+5:30" or "GMT-8"
 llm_provider: "anthropic"  # anthropic | openai | gemini | deepseek | groq
 thread_followup: true
