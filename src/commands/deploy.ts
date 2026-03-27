@@ -1,13 +1,23 @@
 import { execSync } from 'child_process';
-import { readConfig } from '../utils/config';
-import { readSchedule, writeSchedule } from '../utils/schedule';
+import { readConfig, readRepos } from '../utils/config';
+import { readSchedule, writeSchedule, validateSchedule } from '../utils/schedule';
 
 export async function deployCommand(): Promise<void> {
   try {
-    // Refresh the schedule header to reflect any config changes (post_times, auto_generate, etc.)
+    // Refresh the schedule header and validate before committing
     const schedule = readSchedule();
     if (schedule.length > 0) {
-      writeSchedule(schedule, readConfig());
+      const config = readConfig();
+      const knownRepos = readRepos().map(r => r.repo);
+      const errors = validateSchedule(schedule, knownRepos);
+
+      if (errors.length > 0) {
+        console.error('Cannot deploy — fix these issues in schedule-twitter.txt first:\n');
+        errors.forEach(e => console.error(`  ✗ ${e}`));
+        process.exit(1);
+      }
+
+      writeSchedule(schedule, config);
     }
 
     execSync('git add -A', { stdio: 'pipe' });
