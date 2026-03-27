@@ -66,21 +66,21 @@ Line 3 (question): The experience-based question, isolated. MAX 60 characters.
 Line 4: hashtags only — always #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
 
 CHARACTER BUDGET — Twitter counts every character including newlines:
-- Line 1: 110 + newline = 111
-- Line 2: 80 + newline = 81
+- Line 1: max 90 chars + newline
+- Line 2: max 60 chars + newline
 - blank line: 1
-- Line 3: 60 + newline = 61
-- Line 4: 30
-- TOTAL MUST BE UNDER 280. Target 270 to be safe.
+- Line 3 (question): max 65 chars + newline
+- Line 4 (hashtags): #buildinpublic + 1 tag = ~25 chars
+- TOTAL TARGET: under 250. Hard limit: 280.
 
-TWEET 1 specifically — start line 1 with:
-"Started building ${repoName} today - [what it does]. [what you shipped]."
+TWEET 1 — introduce the project:
+"Started building ${repoName} today - [one clause: what it does]. [what you shipped]."
 
-TWEET 2 onwards — start line 1 with:
-"I'm building ${repoName} - [what it does]. [what happened]."
+TWEET 2 onwards — drop the project description, just the repo name and what happened:
+"Building ${repoName}: [what happened in this commit]. Keep line 1 under 90 chars."
 
-EXAMPLE of correct output (count the chars — this is exactly right):
-"I'm building flux-rag - RAG eval framework. Phase 2: chunking, embeddings, retrieval connected.\nFirst run without mocks. Composing pieces is a different problem than building them.\n\nWhere do RAG pipelines tend to break for you?\n#buildinpublic #rag"
+EXAMPLE of correct output — count this, it fits:
+"Building flux-rag: Phase 2 done - chunking, embeddings, vector store, retrieval all connected.\nFirst run without mocks. Composing pieces is harder than building them.\n\nWhere do RAG pipelines tend to break for you?\n#buildinpublic #rag"
 
 STRICT RULES — violations will make the output unusable:
 - NEVER use em dashes (—) anywhere. Use a hyphen (-) or restructure the sentence.
@@ -89,8 +89,8 @@ STRICT RULES — violations will make the output unusable:
 - Questions must be experience-based and specific — something a senior engineer would actually want to answer
 - Subtle emotion is good: "always a tense moment", "hard to validate upfront", "raises questions"
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
-- If README is missing or vague, write: "Continuing to build ${repoName} today. [best description from commits]. What has your experience been with projects like this?"
-- HARD LIMIT: total tweet must be under 280 characters. Count every character. Be ruthless with brevity.
+- If README is missing or vague, write: "Building ${repoName}: [best description from commits]. What has your experience been with projects like this?"
+- HARD LIMIT: total tweet under 280 characters. Count every character including newlines. Be ruthless.
 - Return a valid JSON array of exactly ${n} objects — no markdown fences, no extra text:
 
 [{"text": "tweet body", "source": "short label for what this tweet covers"}, ...]`;
