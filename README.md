@@ -2,7 +2,7 @@
 
 Turn your GitHub commits into actually good tweets using an LLM
 
-github green squares → twitter posts
+github green squares → twitter/bluesky posts
 
 ---
 
@@ -78,21 +78,24 @@ tweets get generated and scheduled automatically
 
 ## Platforms
 
-### X (Twitter)
+### Bluesky — free, no approval needed
 
-Apply for a developer account at [developer.twitter.com](https://developer.twitter.com) — approval takes 1–3 days. When filling out the use case form, be specific: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
+Go to Bluesky → Settings → Privacy and Security → App Passwords → Add App Password. Copy the generated password — that's your `BLUESKY_APP_PASSWORD`. Your identifier is your handle e.g. `yourname.bsky.social`.
 
-API is pay-per-use. Each tweet costs $0.01, so a few tweets a day runs well under $1/month.
+This is the default platform in `config.yml`. Zero cost, works immediately.
 
-### Bluesky (free)
+### X (Twitter) — pay per use
 
-No approval needed. Go to Bluesky → Settings → Privacy and Security → App Passwords → Add App Password. Copy the generated password — that's your `BLUESKY_APP_PASSWORD`. Your identifier is your handle e.g. `yourname.bsky.social`.
+Apply for a developer account at [developer.twitter.com](https://developer.twitter.com) — approval takes 1–3 days. Be specific in the use case form: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
 
-To enable, add to `config.yml`:
+Each tweet costs $0.01 (including the thread reply, so $0.02 per post). At 3 posts/day your initial $5 credit lasts almost 3 months.
+
+To post to both platforms:
 
 ```yaml
 platforms:
-  - bluesky   # or add both x and bluesky
+  - bluesky
+  - x
 ```
 
 ---
