@@ -57,7 +57,7 @@ You only need the key for your chosen LLM provider, plus all four X keys.
 
 **3. Configure**
 
-Copy `config.example.yml` to `config.yml` and edit it:
+Copy `config.example.yml` to `config.yml`, edit it, and commit it to your repo — GitHub Actions reads it from there:
 
 ```yaml
 github_owner: "your-github-username"
@@ -89,7 +89,7 @@ npm run approve   # assigns post times, creates schedule-twitter.txt
 npm run deploy    # pushes — tweets are now live in the queue
 ```
 
-Tweets post automatically. The `post.yml` workflow runs every 6 hours and posts anything due.
+Tweets post automatically. The `post.yml` workflow runs every hour and posts anything due.
 
 ---
 
@@ -97,8 +97,8 @@ Tweets post automatically. The `post.yml` workflow runs every 6 hours and posts 
 
 ```bash
 npm install
-cp .env.example .env               # fill in your keys
-cp config.example.yml config.yml   # edit with your repos + settings
+cp .env.example .env                      # fill in your keys
+cp config.example.yml config.yml          # edit with your repos + settings, then commit
 
 # Generate tweets for a repo
 npm run generate -- my-repo --n=10
