@@ -55,7 +55,7 @@ export function readSchedule(): ScheduledTweet[] {
  */
 export function parseScheduleTxt(content: string): ScheduledTweet[] {
   const entries: ScheduledTweet[] = [];
-  const lines = content.split('\n');
+  const lines = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
 
   let headerSectionDone = false;
   let currentScheduled = '';
