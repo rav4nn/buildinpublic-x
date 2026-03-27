@@ -129,6 +129,52 @@ function fixLiteralNewlinesInJson(str: string): string {
   return result;
 }
 
+/**
+ * Enforce the 280-char Twitter limit by trimming the reflection line first,
+ * then the factual line. The question and hashtags are never touched.
+ * Format assumed: "factual\nreflection\n\nquestion\n#hashtags"
+ */
+function enforceCharLimit(text: string): string {
+  if (text.length <= MAX_TWEET_CHARS) return text;
+
+  const parts = text.split('\n\n');
+  if (parts.length < 2) return text.slice(0, MAX_TWEET_CHARS);
+
+  const upper = parts[0]; // factual + reflection
+  const lower = parts.slice(1).join('\n\n'); // question + hashtags
+  const lowerCost = lower.length + 2; // +2 for the \n\n separator
+  const budget = MAX_TWEET_CHARS - lowerCost;
+
+  if (budget < 10) return text; // nothing reasonable to cut — leave as-is
+
+  const upperLines = upper.split('\n');
+  if (upperLines.length >= 2) {
+    const factual = upperLines[0];
+    const reflection = upperLines.slice(1).join('\n');
+    const reflectionBudget = budget - factual.length - 1; // -1 for \n
+
+    if (reflectionBudget <= 0) {
+      // Drop reflection entirely, trim factual if needed
+      const trimmedFactual = factual.length > budget
+        ? factual.slice(0, factual.lastIndexOf(' ', budget)) || factual.slice(0, budget)
+        : factual;
+      return trimmedFactual + '\n\n' + lower;
+    }
+
+    // Trim reflection to fit
+    const trimmedReflection = reflection.length > reflectionBudget
+      ? reflection.slice(0, reflection.lastIndexOf(' ', reflectionBudget)) || reflection.slice(0, reflectionBudget)
+      : reflection;
+    return factual + '\n' + trimmedReflection + '\n\n' + lower;
+  }
+
+  // Only one line above the break — trim it
+  const trimmed = upper.length > budget
+    ? upper.slice(0, upper.lastIndexOf(' ', budget)) || upper.slice(0, budget)
+    : upper;
+  return trimmed + '\n\n' + lower;
+}
+
 /** Parse the LLM response into GeneratedTweet objects. */
 function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
   const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim();
@@ -155,10 +201,13 @@ function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
       ? String((item as Record<string, unknown>).source)
       : `tweet ${i + 1}`;
 
-    if (text.length > MAX_TWEET_CHARS) {
-      console.warn(`  Warning: tweet #${i + 1} is ${text.length} chars (over ${MAX_TWEET_CHARS}). Edit it down before posting.`);
+    const enforced = enforceCharLimit(text);
+    if (enforced.length > MAX_TWEET_CHARS) {
+      console.warn(`  Warning: tweet #${i + 1} is ${enforced.length} chars — trim it manually before posting.`);
+    } else if (enforced.length < text.length) {
+      console.log(`  tweet #${i + 1}: trimmed ${text.length - enforced.length} chars to fit 280`);
     }
-    return { text, source };
+    return { text: enforced, source };
   });
 }
 
