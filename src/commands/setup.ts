@@ -2,17 +2,8 @@ import { execSync, execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SECRETS = [
-  'X_API_KEY',
-  'X_API_SECRET',
-  'X_ACCESS_TOKEN',
-  'X_ACCESS_TOKEN_SECRET',
-  'ANTHROPIC_API_KEY',
-  'OPENAI_API_KEY',
-  'GEMINI_API_KEY',
-  'DEEPSEEK_API_KEY',
-  'GROQ_API_KEY',
-];
+// Keys that should never be pushed — Actions provides these automatically
+const SKIP_KEYS = new Set(['GITHUB_TOKEN']);
 
 /** Parse a .env file into a key→value map. */
 function parseEnv(content: string): Record<string, string> {
@@ -90,8 +81,13 @@ export async function setupCommand(args: string[]): Promise<void> {
   let skipped = 0;
   let failed = 0;
 
-  for (const key of SECRETS) {
-    const value = envVars[key];
+  for (const [key, value] of Object.entries(envVars)) {
+    // Skip keys that Actions provides automatically
+    if (SKIP_KEYS.has(key)) {
+      console.log(`  — Skipped  ${key} (provided automatically by Actions)`);
+      skipped++;
+      continue;
+    }
 
     // Skip placeholder or empty values
     if (!value || value.startsWith('your_')) {
