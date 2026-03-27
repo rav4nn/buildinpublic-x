@@ -117,6 +117,6 @@ export async function setupCommand(args: string[]): Promise<void> {
     console.log(`\nTo set the skipped ones, add them to .env and run: npm run setup`);
   }
   if (set > 0) {
-    console.log(`\nAll set! Go to github.com/${repo}/actions and trigger the Generate Tweets workflow.`);
+    console.log(`\nAll set! To generate posts, run: npm run generate -- your_repo --n=5`);
   }
 }

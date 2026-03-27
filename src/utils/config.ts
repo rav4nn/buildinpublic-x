@@ -9,7 +9,6 @@ export interface RepoConfig {
 
 export interface AppConfig {
   github_owner: string;
-  repos: string[];
   platforms: string[];     // ["x", "bluesky"] — which platforms to post to
   timezone: string;
   thread_followup: boolean;
@@ -31,7 +30,6 @@ export function readConfig(): AppConfig {
 
   return {
     github_owner: raw.github_owner ?? '',
-    repos: raw.repos ?? [],
     platforms: raw.platforms ?? ['x'],
     timezone: raw.timezone ?? 'GMT+0',
     thread_followup: raw.thread_followup ?? true,
@@ -48,19 +46,19 @@ export function readRepos(): RepoConfig[] {
   if (!config.github_owner) {
     throw new Error('github_owner not set in config.yml');
   }
-  if (config.repos.length === 0) {
-    throw new Error('No repos listed in config.yml');
-  }
-  return config.repos.map(repo => ({ owner: config.github_owner, repo }));
+  // Discover repos by scanning for subdirectories that contain commits.json
+  // (created by npm run fetch / npm run generate)
+  const cwd = process.cwd();
+  const dirs = fs.readdirSync(cwd, { withFileTypes: true })
+    .filter(d => d.isDirectory() && fs.existsSync(path.join(cwd, d.name, 'commits.json')))
+    .map(d => d.name);
+  return dirs.map(repo => ({ owner: config.github_owner, repo }));
 }
 
 export function findRepo(repoName: string): RepoConfig {
   const config = readConfig();
   if (!config.github_owner) {
     throw new Error('github_owner not set in config.yml');
-  }
-  if (!config.repos.includes(repoName)) {
-    throw new Error(`Repo "${repoName}" not found in config.yml repos list`);
   }
   return { owner: config.github_owner, repo: repoName };
 }

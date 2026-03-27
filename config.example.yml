@@ -1,7 +1,4 @@
 github_owner: "your-github-username"
-repos:
-  - your-repo-name
-  # - another-repo
 
 platforms:                  # Which platforms to post to
   - bluesky                 # free (requires BLUESKY_IDENTIFIER + BLUESKY_APP_PASSWORD)

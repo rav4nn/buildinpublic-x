@@ -176,9 +176,9 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
   for (const e of entries) {
     const label = `${e.repo} #${e.tweetNumber}`;
 
-    // Unknown repo
+    // Unknown repo (no commits.json found for it)
     if (!knownRepos.includes(e.repo)) {
-      errors.push(`${label}: repo "${e.repo}" not found in repos.yml — add it or remove the entry`);
+      errors.push(`${label}: repo "${e.repo}" has no commits.json — run: npm run generate -- ${e.repo}`);
     }
 
     // Parse and validate the datetime

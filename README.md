@@ -14,7 +14,7 @@ but
 
 * you don’t know what to post
 * you forget to post
-* or writing tweets feels like extra work
+* writing tweets feels like extra work
 
 Meanwhile your commits already tell the story
 they just don’t sound like tweets
@@ -24,7 +24,7 @@ they just don’t sound like tweets
 ## What this does
 
 * reads your commits
-* uses an LLM (your choice) to turn them into clear, relevant tweets
+* uses an LLM (you choose) to turn them into clear, relevant tweets
 * lets you review and edit
 * schedules and posts automatically
 * for live projects - posts automatically every few hours
@@ -47,21 +47,34 @@ Everything runs from your repo.
 ## How it works
 
 1. Fork this repo
-2. Add your API keys (LLM + X or Bluesky)
-3. Generate tweets from your commits
+2. Add your API keys (LLM + X or Bluesky) to your .env 
+3. Generate posts from your commits + project README context
 4. Review → approve → done
 
-Your tweets are now scheduled
+Your posts are now scheduled!
 
 ---
 
 ## Commands
 
 ```bash
-npm run generate -- my-repo --n=10
+# 1. Fork this repo on GitHub, then clone your fork
+git clone https://github.com/your-username/buildinpublic-x && cd buildinpublic-x
+
+# 2. Push your .env secrets to GitHub — run once after setup
+npm run setup
+
+# 3. Generate posts from your repo's recent commits
+npm run generate -- my-repo --n=5
+
+# 4. Review posts in my-repo/my-repo-tweets.txt, then schedule them
 npm run approve
+
+# 5. Push the schedule live
 npm run deploy
 ```
+
+`npm run post` and `npm run auto-generate` run automatically via GitHub Actions — you don't need to call them manually.
 
 ---
 
@@ -72,7 +85,7 @@ auto_generate: true
 ```
 
 New commits are picked up multiple times a day
-tweets get generated and scheduled automatically
+posts get generated and scheduled automatically
 
 ---
 
@@ -86,9 +99,9 @@ This is the default platform in `config.yml`. Zero cost, works immediately.
 
 ### X (Twitter) — pay per use
 
-Apply for a developer account at [developer.twitter.com](https://developer.twitter.com) — approval takes 1–3 days. Be specific in the use case form: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
+Apply for a developer account at [developer.twitter.com](https://developer.twitter.com). Be specific in the use case form: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
 
-Each tweet costs $0.01 (including the thread reply, so $0.02 per post). At 3 posts/day your initial $5 credit lasts almost 3 months.
+Each post costs $0.02 (including the reply with your repo's github link). At 3 posts/day your initial $5 credit lasts almost 3 months.
 
 To post to both platforms:
 
