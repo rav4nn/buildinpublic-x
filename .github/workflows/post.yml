@@ -2,7 +2,7 @@ name: Post Scheduled Tweets
 
 on:
   schedule:
-    - cron: "*/30 * * * *"  # Every 30 minutes
+    - cron: "30 * * * *"  # Every hour at :30 past (aligns with GMT+5:30)
   workflow_dispatch:        # Also allow manual trigger
 
 jobs:
