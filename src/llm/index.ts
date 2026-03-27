@@ -175,6 +175,37 @@ function enforceCharLimit(text: string): string {
   return trimmed + '\n\n' + lower;
 }
 
+/**
+ * Ask the LLM to trim a single over-limit tweet.
+ * Only shortens the factual and reflection lines; question and hashtags are kept verbatim.
+ */
+async function trimTweetWithLLM(text: string, provider: string): Promise<string> {
+  const prompt = `This tweet is ${text.length} characters, over Twitter's 280-char limit. Trim it to under 275 characters.
+
+RULES:
+- Keep the question line (the line ending with "?") EXACTLY as-is
+- Keep the hashtag line EXACTLY as-is
+- Keep the blank line between reflection and question EXACTLY as-is
+- Only shorten the first line (factual) and/or second line (reflection)
+- Do NOT add any new text, only remove words
+- Return ONLY the trimmed tweet text, nothing else
+
+TWEET:
+${text}`;
+
+  let raw: string;
+  switch (provider) {
+    case 'anthropic': raw = await generateWithAnthropic(prompt); break;
+    case 'openai':    raw = await generateWithOpenAI(prompt); break;
+    case 'gemini':    raw = await generateWithGemini(prompt); break;
+    case 'deepseek':  raw = await generateWithDeepSeek(prompt); break;
+    case 'groq':      raw = await generateWithGroq(prompt); break;
+    default:          return text; // unknown provider, return unchanged
+  }
+
+  return raw.trim();
+}
+
 /** Parse the LLM response into GeneratedTweet objects. */
 function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
   const cleaned = raw.replace(/^```(?:json)?\s*/m, '').replace(/\s*```$/m, '').trim();
@@ -201,13 +232,7 @@ function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
       ? String((item as Record<string, unknown>).source)
       : `tweet ${i + 1}`;
 
-    const enforced = enforceCharLimit(text);
-    if (enforced.length > MAX_TWEET_CHARS) {
-      console.warn(`  Warning: tweet #${i + 1} is ${enforced.length} chars — trim it manually before posting.`);
-    } else if (enforced.length < text.length) {
-      console.log(`  tweet #${i + 1}: trimmed ${text.length - enforced.length} chars to fit 280`);
-    }
-    return { text: enforced, source };
+    return { text, source };
   });
 }
 
@@ -239,5 +264,29 @@ export async function generateTweets(
       throw new Error(`Unknown LLM provider: "${provider}". Valid: anthropic | openai | gemini | deepseek | groq`);
   }
 
-  return parseGeneratedTweets(raw, n);
+  const tweets = parseGeneratedTweets(raw, n);
+
+  // Second pass: LLM-trim any tweets still over the limit
+  const trimmed = await Promise.all(tweets.map(async (tweet, i) => {
+    if (tweet.text.length <= MAX_TWEET_CHARS) return tweet;
+
+    console.log(`  tweet #${i + 1}: ${tweet.text.length} chars — asking LLM to trim...`);
+    const llmTrimmed = await trimTweetWithLLM(tweet.text, provider);
+
+    if (llmTrimmed.length <= MAX_TWEET_CHARS) {
+      console.log(`  tweet #${i + 1}: trimmed to ${llmTrimmed.length} chars`);
+      return { ...tweet, text: llmTrimmed };
+    }
+
+    // LLM still over — fall back to script trim silently
+    const fallback = enforceCharLimit(llmTrimmed);
+    if (fallback.length > MAX_TWEET_CHARS) {
+      console.warn(`  Warning: tweet #${i + 1} is ${fallback.length} chars — trim it manually before posting.`);
+    } else {
+      console.log(`  tweet #${i + 1}: script-trimmed to ${fallback.length} chars`);
+    }
+    return { ...tweet, text: fallback };
+  }));
+
+  return trimmed;
 }
