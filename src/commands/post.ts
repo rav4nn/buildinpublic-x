@@ -1,5 +1,5 @@
 import { readConfig, formatLocalTime, parseLocalTime, findRepo } from '../utils/config';
-import { readSchedule, updateScheduleStatus } from '../utils/schedule';
+import { readSchedule, removeScheduleEntry } from '../utils/schedule';
 import { archiveTweet } from '../utils/tweets';
 import { postTweet, postReply } from '../utils/twitter';
 import { statusCommand } from './status';
@@ -8,6 +8,12 @@ const ATTRIBUTION = 'github.com/rav4nn/buildinpublic-x';
 
 export async function postCommand(): Promise<void> {
   const config = readConfig();
+
+  if (config.paused) {
+    console.log('Paused. Set paused: false in config.yml and push to resume.');
+    return;
+  }
+
   const { timezone, thread_followup, thread_followup_text } = config;
   const nowUtc = new Date();
 
@@ -53,7 +59,7 @@ export async function postCommand(): Promise<void> {
 
       const postedAt = formatLocalTime(nowUtc, timezone);
 
-      updateScheduleStatus(entry.repo, entry.tweetNumber, 'POSTED');
+      removeScheduleEntry(entry.repo, entry.tweetNumber);
       archiveTweet(entry.repo, entry.tweetNumber, postedAt);
 
       console.log(`  ✓ Posted`);

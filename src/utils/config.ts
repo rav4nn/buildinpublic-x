@@ -5,15 +5,16 @@ import * as path from 'path';
 export interface RepoConfig {
   owner: string;
   repo: string;
-  tweets_per_day: number;
 }
 
 export interface AppConfig {
   timezone: string;
   thread_followup: boolean;
   thread_followup_text: string;
-  max_tweets_per_day: number;
   llm_provider: string;
+  post_times: string[];    // ["09:00", "13:00", ...] — up to 8, local timezone
+  auto_generate: boolean;  // enable 4x/day cron auto-pickup of new commits
+  paused: boolean;         // kill switch
 }
 
 export function readRepos(): RepoConfig[] {
@@ -30,8 +31,18 @@ export function readConfig(): AppConfig {
   if (!fs.existsSync(file)) {
     throw new Error('No config.yml or config.example.yml found. Run: cp config.example.yml config.yml');
   }
-  const content = fs.readFileSync(file, 'utf-8');
-  return yaml.load(content) as AppConfig;
+  const raw = yaml.load(fs.readFileSync(file, 'utf-8')) as Partial<AppConfig>;
+
+  // Defaults for fields added after initial setup
+  return {
+    timezone: raw.timezone ?? 'GMT+0',
+    thread_followup: raw.thread_followup ?? true,
+    thread_followup_text: raw.thread_followup_text ?? '~ posted using github.com/rav4nn/buildinpublic-x',
+    llm_provider: raw.llm_provider ?? 'anthropic',
+    post_times: raw.post_times ?? ['09:00', '13:00', '17:00', '21:00'],
+    auto_generate: raw.auto_generate ?? false,
+    paused: raw.paused ?? false,
+  };
 }
 
 export function findRepo(repoName: string): RepoConfig {
@@ -72,7 +83,6 @@ export function formatLocalTime(utcDate: Date, tz: string): string {
  * Accepts "YYYY-MM-DD HH:MM GMT+X:XX"
  */
 export function parseLocalTime(str: string, tz: string): Date {
-  // e.g. "2024-01-15 09:00 GMT+5:30"
   const match = str.match(/^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})/);
   if (!match) throw new Error(`Cannot parse time: ${str}`);
   const localMs = new Date(`${match[1]}T${match[2]}:00Z`).getTime();

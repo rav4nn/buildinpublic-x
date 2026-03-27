@@ -72,6 +72,10 @@ export async function generateCommand(args: string[]): Promise<void> {
 
   writeTweets(repoName, [...preserved, ...newTweets], contextLine);
 
+  // Record which commit was latest at generation time (used by auto-generate to detect new commits)
+  cache.lastGeneratedSHA = cache.commits[cache.commits.length - 1]?.sha ?? '';
+  fs.writeFileSync(cacheFile, JSON.stringify(cache, null, 2), 'utf-8');
+
   if (droppedCount > 0) {
     console.log(`  Replaced ${droppedCount} existing PENDING tweet${droppedCount === 1 ? '' : 's'}`);
   }

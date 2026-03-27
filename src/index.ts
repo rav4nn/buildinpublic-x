@@ -4,6 +4,8 @@ dotenv.config();
 import { fetchCommand } from './commands/fetch';
 import { generateCommand } from './commands/generate';
 import { approveCommand } from './commands/approve';
+import { deployCommand } from './commands/deploy';
+import { autoGenerateCommand } from './commands/autogenerate';
 import { postCommand } from './commands/post';
 import { statusCommand } from './commands/status';
 import { setupCommand } from './commands/setup';
@@ -14,15 +16,17 @@ const cmdArgs = args.slice(1);
 
 async function main(): Promise<void> {
   switch (command) {
-    case 'fetch':    await fetchCommand(cmdArgs); break;
-    case 'generate': await generateCommand(cmdArgs); break;
-    case 'approve':  await approveCommand(); break;
-    case 'post':     await postCommand(); break;
-    case 'status':   await statusCommand(); break;
-    case 'setup':    await setupCommand(cmdArgs); break;
+    case 'fetch':         await fetchCommand(cmdArgs); break;
+    case 'generate':      await generateCommand(cmdArgs); break;
+    case 'approve':       await approveCommand(); break;
+    case 'deploy':        await deployCommand(); break;
+    case 'auto-generate': await autoGenerateCommand(); break;
+    case 'post':          await postCommand(); break;
+    case 'status':        await statusCommand(); break;
+    case 'setup':         await setupCommand(cmdArgs); break;
     default:
       console.error(`Unknown command: "${command}"`);
-      console.error('Available commands: fetch | generate | approve | post | status | setup');
+      console.error('Commands: fetch | generate | approve | deploy | auto-generate | post | status | setup');
       process.exit(1);
   }
 }

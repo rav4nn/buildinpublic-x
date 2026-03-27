@@ -35,14 +35,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch commits
-        run: npm run fetch -- ${{ github.event.inputs.repo_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate tweets
+      - name: Generate tweets (fetches commits automatically)
         run: npm run generate -- ${{ github.event.inputs.repo_name }} --n=${{ github.event.inputs.num_tweets }}
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -55,7 +51,7 @@ jobs:
           git config user.email "actions@github.com"
           git pull --rebase --autostash origin ${{ github.ref_name }}
           git add ${{ github.event.inputs.repo_name }}/commits.json \
-                  ${{ github.event.inputs.repo_name }}/${{ github.event.inputs.repo_name }}-tweets.md || true
+                  "${{ github.event.inputs.repo_name }}/${{ github.event.inputs.repo_name }}-tweets.txt" || true
           git diff --staged --quiet && echo "Nothing to commit" || \
             git commit -m "chore: generate tweets for ${{ github.event.inputs.repo_name }} [skip ci]"
           git push origin ${{ github.ref_name }}
