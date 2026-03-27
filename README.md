@@ -36,11 +36,7 @@ Everything runs from your repo.
 
 ## Example
 
-> Started building flux-rag today - a universal RAG pipeline. Scaffolding package structure and core models.
-> Laying out clear interfaces early prevents significant refactoring later.
->
-> What architectural choices do you prioritize at inception?
-> #buildinpublic #architecture
+![Posted tweet with GitHub project link preview](x.com_rav4nn.png)
 
 ---
 
@@ -67,14 +63,16 @@ npm run setup
 # 3. Generate posts from your repo's recent commits
 npm run generate -- my-repo --n=5
 
-# 4. Review posts in my-repo/my-repo-tweets.txt, then schedule them
+# 4. Review posts in my-repo/my-repo-tweets.txt, then run schedule command
 npm run approve
 
-# 5. Push the schedule live
+# 5. Push the schedule live if all looks okay
 npm run deploy
 ```
 
 `npm run post` and `npm run auto-generate` run automatically via GitHub Actions — you don't need to call them manually.
+
+![schedule-twitter.txt showing queued tweets](schedule_tweets.png)
 
 ---
 
