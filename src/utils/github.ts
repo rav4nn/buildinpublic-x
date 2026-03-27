@@ -13,7 +13,7 @@ export interface CommitsCache {
   lastFetchedAt: string;
   lastCommitSHA: string;
   lastCommitDate: string;
-  lastGeneratedSHA: string; // SHA of latest commit at time of last generate run
+  lastGeneratedSHA?: string; // SHA of latest commit at time of last generate run
   readme: string;
   commits: CommitRecord[];
 }
