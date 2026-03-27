@@ -20,6 +20,10 @@ export async function deployCommand(): Promise<void> {
       writeSchedule(schedule, config);
     }
 
+    // Ensure git user is configured (required when running inside GitHub Actions)
+    execSync('git config user.name "github-actions[bot]"', { stdio: 'pipe' });
+    execSync('git config user.email "github-actions[bot]@users.noreply.github.com"', { stdio: 'pipe' });
+
     execSync('git add -A', { stdio: 'pipe' });
     const staged = execSync('git diff --staged --name-only', { encoding: 'utf-8' }).trim();
     if (!staged) {
