@@ -4,6 +4,7 @@ import { findRepo } from '../utils/config';
 import { generateTweets } from '../llm/index';
 import { readTweets, writeTweets, Tweet } from '../utils/tweets';
 import { CommitsCache } from '../utils/github';
+import { fetchCommand } from './fetch';
 
 export async function generateCommand(args: string[]): Promise<void> {
   const filteredArgs = args.filter(a => a !== '--');
@@ -23,12 +24,10 @@ export async function generateCommand(args: string[]): Promise<void> {
 
   const repoConfig = findRepo(repoName);
 
-  const cacheFile = path.join(process.cwd(), repoName, 'commits.json');
-  if (!fs.existsSync(cacheFile)) {
-    console.error(`commits.json not found for "${repoName}". Run: npm run fetch -- ${repoName}`);
-    process.exit(1);
-  }
+  // Always fetch latest commits before generating
+  await fetchCommand([repoName]);
 
+  const cacheFile = path.join(process.cwd(), repoName, 'commits.json');
   const cache: CommitsCache = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
 
   if (cache.commits.length === 0) {

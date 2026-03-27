@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import { readRepos, readConfig, formatLocalTime, parseTzOffset } from '../utils/config';
 import { readTweets, updateTweetStatus } from '../utils/tweets';
 import { readSchedule, writeSchedule, ScheduledTweet } from '../utils/schedule';
@@ -113,5 +114,20 @@ export async function approveCommand(): Promise<void> {
   }
 
   console.log(`✓ Scheduled ${newEntries.length} tweet(s) — see schedule-twitter.md`);
-  console.log(`  You can still manually edit schedule-twitter.md to adjust times.`);
+
+  try {
+    execSync('git add -A', { stdio: 'pipe' });
+    const staged = execSync('git diff --staged --name-only', { encoding: 'utf-8' }).trim();
+    if (staged) {
+      execSync('git commit -m "chore: schedule tweets [skip ci]"', { stdio: 'inherit' });
+      execSync('git pull --rebase --autostash origin main', { stdio: 'pipe' });
+      execSync('git push origin main', { stdio: 'inherit' });
+      console.log('✓ Pushed — tweets are live and will post on schedule');
+    } else {
+      console.log('  Nothing new to push (schedule unchanged).');
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`  Warning: git push failed — push manually to deploy the schedule.\n  ${msg}`);
+  }
 }
