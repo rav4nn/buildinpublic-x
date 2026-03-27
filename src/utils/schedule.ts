@@ -153,7 +153,7 @@ export function writeSchedule(entries: ScheduledTweet[], config: AppConfig): voi
   const sorted = [...scheduled].sort((a, b) => a.scheduled.localeCompare(b.scheduled));
   const header = buildHeader(sorted, config);
   const body = sorted.length
-    ? SEP + '\n' + sorted.map(serializeEntry).join('\n' + SEP + '\n\n') + '\n' + SEP + '\n'
+    ? SEP + '\n\n' + sorted.map(serializeEntry).join('\n\n' + SEP + '\n\n') + '\n\n' + SEP + '\n'
     : '';
   fs.writeFileSync(scheduleFile(), header + body, 'utf-8');
 }

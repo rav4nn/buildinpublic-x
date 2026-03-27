@@ -86,6 +86,7 @@ STRICT RULES — violations will make the output unusable:
 - NEVER use em dashes (—) anywhere. Use a hyphen (-) or restructure the sentence.
 - NEVER include a GitHub URL in the tweet body — it will be added separately
 - NEVER use generic questions ("any thoughts?", "agree?", "what do you think?")
+- Line 4 MUST exist and MUST start with #buildinpublic — this is non-negotiable. Example: "#buildinpublic #rag"
 - Questions must be experience-based and specific — something a senior engineer would actually want to answer
 - Subtle emotion is good: "always a tense moment", "hard to validate upfront", "raises questions"
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
