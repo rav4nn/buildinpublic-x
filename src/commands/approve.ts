@@ -50,19 +50,35 @@ export async function approveCommand(): Promise<void> {
     }
   }
 
-  // Start of tomorrow in local timezone
+  // Find the next available slot: today's remaining slots first, then tomorrow onwards.
+  // Add a 30-minute buffer so there's time to review and deploy before the first tweet posts.
   const nowUtc = new Date();
-  const tomorrowLocalMidnightMs =
-    new Date(nowUtc.getTime() + tzOffsetMin * 60 * 1000).setUTCHours(0, 0, 0, 0) +
-    24 * 60 * 60 * 1000;
+  const nowLocalMs = nowUtc.getTime() + tzOffsetMin * 60 * 1000;
+  const todayLocalMidnightMs = new Date(nowLocalMs).setUTCHours(0, 0, 0, 0);
+  const nowLocalMinutes = new Date(nowLocalMs).getUTCHours() * 60 + new Date(nowLocalMs).getUTCMinutes();
+  const bufferMinutes = 30;
 
-  // Assign each tweet to a post_times slot, spilling to the next day when all slots are filled
+  // Find the first slot today that's still at least 30 min away
+  let startDayMs = todayLocalMidnightMs;
+  let startSlotIndex = post_times.findIndex(t => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m > nowLocalMinutes + bufferMinutes;
+  });
+
+  if (startSlotIndex === -1) {
+    // No slots left today — start from tomorrow
+    startDayMs = todayLocalMidnightMs + 24 * 60 * 60 * 1000;
+    startSlotIndex = 0;
+  }
+
+  // Assign each tweet to a slot, spilling to the next day when all slots are filled
   const newEntries: ScheduledTweet[] = [];
   for (let i = 0; i < allPending.length; i++) {
-    const dayIndex = Math.floor(i / post_times.length);
-    const slotIndex = i % post_times.length;
+    const absoluteSlot = startSlotIndex + i;
+    const dayIndex = Math.floor(absoluteSlot / post_times.length);
+    const slotIndex = absoluteSlot % post_times.length;
     const [hours, minutes] = post_times[slotIndex].split(':').map(Number);
-    const slotUtcMs = tomorrowLocalMidnightMs + dayIndex * 86400000 - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
+    const slotUtcMs = startDayMs + dayIndex * 86400000 - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
     const scheduled = formatLocalTime(new Date(slotUtcMs), timezone);
 
     const item = allPending[i];
