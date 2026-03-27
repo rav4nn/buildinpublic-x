@@ -47,8 +47,14 @@ function serializeBlock(t: Tweet): string {
 /** Parse tweet file content into Tweet objects. Supports both old (.md) and new (.txt) formats. */
 export function parseTweetsMd(content: string): Tweet[] {
   const tweets: Tweet[] = [];
-  // Strip comment lines before splitting into blocks
-  const stripped = content.split('\n').filter(l => !l.startsWith('#')).join('\n');
+  // Strip # comment lines only in the file header — stop before the first tweet block
+  // so that hashtag lines inside tweet bodies are preserved.
+  const lines = content.split('\n');
+  const firstBlock = lines.findIndex(l => /^Tweet \d+-$/.test(l) || /^## Tweet \d+/.test(l));
+  const strippedLines = firstBlock === -1
+    ? lines.filter(l => !l.startsWith('#'))
+    : [...lines.slice(0, firstBlock).filter(l => !l.startsWith('#')), ...lines.slice(firstBlock)];
+  const stripped = strippedLines.join('\n');
   const blocks = stripped.split(/\n---\n/).map(b => b.trim()).filter(Boolean);
 
   for (const block of blocks) {
