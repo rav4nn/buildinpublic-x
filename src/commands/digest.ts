@@ -130,7 +130,7 @@ export async function digestCommand(args: string[]): Promise<void> {
   console.log('\n----------------------');
 
   if (preview) {
-    console.log('\n  Preview only — nothing scheduled. Run without preview to schedule.');
+    console.log('\n  Preview only — nothing scheduled. Run npm run digest to schedule.');
     return;
   }
 
