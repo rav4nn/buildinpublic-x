@@ -20,7 +20,7 @@ export async function autoGenerateCommand(): Promise<void> {
   if (config.tracked_repos && config.tracked_repos.length > 0) {
     const days = config.digest_days ?? 1;
     console.log(`tracked_repos set — running digest (last ${days} day(s)) across ${config.tracked_repos.length} repo(s)`);
-    await digestCommand([`--days=${days}`]);
+    await digestCommand([`${days}`]);
     await deployCommand();
     return;
   }

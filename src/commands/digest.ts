@@ -22,12 +22,12 @@ export async function digestCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  const preview = args.includes('--preview');
-  const daysArg = args.find(a => a.startsWith('--days='));
-  const days = daysArg ? parseInt(daysArg.split('=')[1], 10) : (config.digest_days ?? 1);
+  const preview = args.includes('preview');
+  const daysArg = args.find(a => /^\d+$/.test(a));
+  const days = daysArg ? parseInt(daysArg, 10) : (config.digest_days ?? 1);
 
   if (isNaN(days) || days < 1) {
-    console.error('--days must be a positive integer');
+    console.error('Usage: npm run digest [days] [preview]');
     process.exit(1);
   }
 
