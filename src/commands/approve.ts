@@ -5,11 +5,11 @@ import { readSchedule, writeSchedule, ScheduledTweet } from '../utils/schedule';
 export async function approveCommand(): Promise<void> {
   const repos = readRepos();
   const config = readConfig();
-  const { timezone, post_times } = config;
+  const { timezone, old_post_times } = config;
   const tzOffsetMin = parseTzOffset(timezone);
 
-  if (post_times.length === 0) {
-    console.error('No post_times configured. Add at least one time to config.yml');
+  if (old_post_times.length === 0) {
+    console.error('No old_post_times configured. Add at least one time to config.yml');
     process.exit(1);
   }
 
@@ -60,7 +60,7 @@ export async function approveCommand(): Promise<void> {
 
   // Find the first slot today that's still at least 30 min away
   let startDayMs = todayLocalMidnightMs;
-  let startSlotIndex = post_times.findIndex(t => {
+  let startSlotIndex = old_post_times.findIndex(t => {
     const [h, m] = t.split(':').map(Number);
     return h * 60 + m > nowLocalMinutes + bufferMinutes;
   });
@@ -75,9 +75,9 @@ export async function approveCommand(): Promise<void> {
   const newEntries: ScheduledTweet[] = [];
   for (let i = 0; i < allPending.length; i++) {
     const absoluteSlot = startSlotIndex + i;
-    const dayIndex = Math.floor(absoluteSlot / post_times.length);
-    const slotIndex = absoluteSlot % post_times.length;
-    const [hours, minutes] = post_times[slotIndex].split(':').map(Number);
+    const dayIndex = Math.floor(absoluteSlot / old_post_times.length);
+    const slotIndex = absoluteSlot % old_post_times.length;
+    const [hours, minutes] = old_post_times[slotIndex].split(':').map(Number);
     const slotUtcMs = startDayMs + dayIndex * 86400000 - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
     const scheduled = formatLocalTime(new Date(slotUtcMs), timezone);
 

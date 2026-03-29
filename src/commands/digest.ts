@@ -31,7 +31,7 @@ export async function digestCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
-  const { github_owner, timezone, post_times, thread_followup_text } = config;
+  const { github_owner, timezone, digest_time, thread_followup_text } = config;
   if (!github_owner) throw new Error('github_owner not set in config.yml');
 
   const cutoff = new Date();
@@ -84,27 +84,19 @@ export async function digestCommand(args: string[]): Promise<void> {
     attributionTweet,
   ];
 
-  // Find next available post slot (same logic as approve.ts)
+  // Schedule at digest_time — today if still in the future, otherwise tomorrow
+  const time = digest_time ?? '21:00';
   const tzOffsetMin = parseTzOffset(timezone);
   const nowUtc = new Date();
   const nowLocalMs = nowUtc.getTime() + tzOffsetMin * 60 * 1000;
   const todayLocalMidnightMs = new Date(nowLocalMs).setUTCHours(0, 0, 0, 0);
   const nowLocalMinutes = new Date(nowLocalMs).getUTCHours() * 60 + new Date(nowLocalMs).getUTCMinutes();
-  const bufferMinutes = 30;
-
-  let startDayMs = todayLocalMidnightMs;
-  let startSlotIndex = post_times.findIndex(t => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m > nowLocalMinutes + bufferMinutes;
-  });
-
-  if (startSlotIndex === -1) {
-    startDayMs = todayLocalMidnightMs + 24 * 60 * 60 * 1000;
-    startSlotIndex = 0;
-  }
-
-  const [hours, minutes] = post_times[startSlotIndex].split(':').map(Number);
-  const slotUtcMs = startDayMs - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
+  const [hours, minutes] = time.split(':').map(Number);
+  const targetMinutes = hours * 60 + minutes;
+  const dayMs = targetMinutes > nowLocalMinutes + 5
+    ? todayLocalMidnightMs
+    : todayLocalMidnightMs + 24 * 60 * 60 * 1000;
+  const slotUtcMs = dayMs - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
   const scheduled = formatLocalTime(new Date(slotUtcMs), timezone);
 
   // Assign digest number (increment from last)

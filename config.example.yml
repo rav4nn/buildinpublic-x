@@ -14,16 +14,15 @@ timezone: "GMT+0"          # Your local timezone offset, e.g. "GMT+5:30" or "GMT
 llm_provider: "anthropic"  # anthropic | openai | gemini | deepseek | groq
 thread_followup: true
 thread_followup_text: "~ posted using github.com/rav4nn/buildinpublic-x"
-digest_days: 1              # how many days of commits to summarise per digest (default: 1)
+digest_time: "21:00"        # when to post the daily digest (your local timezone)
+digest_days: 1              # how many days of commits to include per digest (default: 1)
 auto_generate: false        # set true to run digest daily via GitHub Actions
 paused: false               # kill switch — set true + run: npm run deploy to stop all tweets
 
-post_times:                 # When to post each day (your local timezone). Pick up to 8.
+# --- Secondary feature: tweet about older/existing projects ---
+# Run: npm run generate -- <repo> --n=5, then npm run approve, then npm run deploy
+old_post_times:             # posting times for the per-repo generate flow
   - "09:00"
   - "13:00"
   - "17:00"
   - "21:00"
-  # - "07:00"
-  # - "11:00"
-  # - "15:00"
-  # - "23:00"

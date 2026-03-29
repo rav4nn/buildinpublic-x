@@ -26,7 +26,7 @@ export async function autoGenerateCommand(): Promise<void> {
   }
 
   const repos = readRepos();
-  const postTimesCount = config.post_times.length;
+  const postTimesCount = config.old_post_times.length;
   let anyGenerated = false;
 
   for (const repoConfig of repos) {

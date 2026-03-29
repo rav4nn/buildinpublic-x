@@ -146,7 +146,7 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
   const nowUtc = new Date();
   const sorted = [...entries].sort((a, b) => a.scheduled.localeCompare(b.scheduled));
   const lastScheduled = sorted[sorted.length - 1]?.scheduled ?? 'none';
-  const times = config.post_times.join(', ');
+  const times = config.old_post_times.join(', ');
   const autoStatus = config.auto_generate
     ? 'ON — picks up new commits 4x/day automatically'
     : 'OFF — run: npm run auto-generate to pick up new commits';
@@ -154,7 +154,7 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
   return [
     '# Tweet Schedule',
     `# Generated: ${formatLocalTime(nowUtc, config.timezone)}`,
-    `# Posting at: ${times} ${config.timezone} (${config.post_times.length}/day)`,
+    `# Posting at: ${times} ${config.timezone} (${config.old_post_times.length}/day)`,
     `# Queue runs through: ${lastScheduled}`,
     `# Auto-generate: ${autoStatus}`,
     `# Kill switch: set paused: true in config.yml, then run: npm run deploy`,
