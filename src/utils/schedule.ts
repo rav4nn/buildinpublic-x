@@ -204,9 +204,10 @@ export function removeScheduleEntry(repo: string, tweetNumber: number): void {
   writeSchedule(filtered, readConfig());
 }
 
-/** Validate schedule entries and return a list of human-readable error messages. */
-export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]): string[] {
+/** Validate schedule entries and return errors (blocking) and warnings (non-blocking). */
+export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]): { errors: string[]; warnings: string[] } {
   const errors: string[] = [];
+  const warnings: string[] = [];
   const nowUtc = new Date();
   const seenSlots = new Map<string, string>(); // "repo::scheduled" → label
 
@@ -244,12 +245,12 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
         errors.push(`${label}: scheduled time "${e.scheduled}" is in the past — update or remove it`);
       }
 
-      // Posting between midnight and 6am (warn, not hard error)
+      // Posting between midnight and 6am (warning only, does not block deploy)
       const hourMatch = e.scheduled.match(/^\d{4}-\d{2}-\d{2} (\d{2}):\d{2}/);
       if (hourMatch) {
         const localHour = parseInt(hourMatch[1], 10);
         if (localHour < 6) {
-          errors.push(`${label}: scheduled at ${hourMatch[1]}:xx — posting between midnight and 6am, is this intentional?`);
+          warnings.push(`${label}: scheduled at ${hourMatch[1]}:xx — posting between midnight and 6am`);
         }
       }
     }
@@ -265,7 +266,7 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
     // (char limit checked per-thread-part above)
   }
 
-  return errors;
+  return { errors, warnings };
 }
 
 /** Return all SCHEDULED entries whose scheduled time is <= now (UTC). */

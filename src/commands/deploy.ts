@@ -46,7 +46,13 @@ export async function deployCommand(): Promise<void> {
     const config = readConfig();
     if (schedule.length > 0) {
       const knownRepos = readRepos().map(r => r.repo);
-      const errors = validateSchedule(schedule, knownRepos);
+      const { errors, warnings } = validateSchedule(schedule, knownRepos);
+
+      if (warnings.length > 0) {
+        console.warn('Warnings:\n');
+        warnings.forEach(w => console.warn(`  ⚠ ${w}`));
+        console.warn('');
+      }
 
       if (errors.length > 0) {
         console.error('Cannot deploy — fix these issues in schedule-twitter.txt first:\n');
