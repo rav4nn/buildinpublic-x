@@ -57,8 +57,10 @@ export async function deployCommand(): Promise<void> {
       writeSchedule(schedule, config);
     }
 
-    // Sync workflow cron times with user's configured post times
-    updateWorkflowCrons(config);
+    // Only update workflow crons locally — CI can't push workflow file changes
+    if (!process.env.GITHUB_ACTIONS) {
+      updateWorkflowCrons(config);
+    }
 
     // Ensure git user is configured (required when running inside GitHub Actions)
     execSync('git config user.name "github-actions[bot]"', { stdio: 'pipe' });
