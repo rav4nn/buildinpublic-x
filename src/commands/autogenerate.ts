@@ -6,12 +6,21 @@ import { fetchCommand } from './fetch';
 import { generateCommand } from './generate';
 import { approveCommand } from './approve';
 import { deployCommand } from './deploy';
+import { digestCommand } from './digest';
 
 export async function autoGenerateCommand(): Promise<void> {
   const config = readConfig();
 
   if (config.paused) {
     console.log('Paused. Set paused: false in config.yml to resume.');
+    return;
+  }
+
+  // If tracked_repos is configured, run daily digest instead of per-repo generation
+  if (config.tracked_repos && config.tracked_repos.length > 0) {
+    console.log(`tracked_repos set — running daily digest across ${config.tracked_repos.length} repo(s)`);
+    await digestCommand(['--days=1']);
+    await deployCommand();
     return;
   }
 

@@ -9,13 +9,14 @@ export interface RepoConfig {
 
 export interface AppConfig {
   github_owner: string;
+  tracked_repos: string[]; // repos monitored for daily digest (npm run digest)
   platforms: string[];     // ["x", "bluesky"] — which platforms to post to
   timezone: string;
   thread_followup: boolean;
   thread_followup_text: string;
   llm_provider: string;
   post_times: string[];    // ["09:00", "13:00", ...] — up to 8, local timezone
-  auto_generate: boolean;  // enable 4x/day cron auto-pickup of new commits
+  auto_generate: boolean;  // enable hourly cron — runs digest (if tracked_repos set) or per-repo generation
   paused: boolean;         // kill switch
 }
 
@@ -30,6 +31,7 @@ export function readConfig(): AppConfig {
 
   return {
     github_owner: raw.github_owner ?? '',
+    tracked_repos: raw.tracked_repos ?? [],
     platforms: raw.platforms ?? ['x'],
     timezone: raw.timezone ?? 'GMT+0',
     thread_followup: raw.thread_followup ?? true,

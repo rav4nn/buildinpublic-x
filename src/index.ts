@@ -9,6 +9,7 @@ import { autoGenerateCommand } from './commands/autogenerate';
 import { postCommand } from './commands/post';
 import { statusCommand } from './commands/status';
 import { setupCommand } from './commands/setup';
+import { digestCommand } from './commands/digest';
 
 const args = process.argv.slice(2).filter(a => a !== '--');
 const command = args[0];
@@ -24,9 +25,10 @@ async function main(): Promise<void> {
     case 'post':          await postCommand(); break;
     case 'status':        await statusCommand(); break;
     case 'setup':         await setupCommand(cmdArgs); break;
+    case 'digest':        await digestCommand(cmdArgs); break;
     default:
       console.error(`Unknown command: "${command}"`);
-      console.error('Commands: fetch | generate | approve | deploy | auto-generate | post | status | setup');
+      console.error('Commands: fetch | generate | approve | deploy | auto-generate | post | status | setup | digest');
       process.exit(1);
   }
 }

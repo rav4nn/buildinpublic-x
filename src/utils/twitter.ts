@@ -24,10 +24,11 @@ export async function postTweet(text: string): Promise<string> {
   return data.id;
 }
 
-/** Post a reply to an existing tweet. */
-export async function postReply(text: string, replyToId: string): Promise<void> {
+/** Post a reply to an existing tweet. Returns the new tweet ID. */
+export async function postReply(text: string, replyToId: string): Promise<string> {
   const client = getClient();
-  await client.v2.tweet(text, { reply: { in_reply_to_tweet_id: replyToId } });
+  const { data } = await client.v2.tweet(text, { reply: { in_reply_to_tweet_id: replyToId } });
+  return data.id;
 }
 
 /** Validate that Twitter credentials are configured (does not post anything). */

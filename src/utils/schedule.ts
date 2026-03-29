@@ -10,6 +10,7 @@ export interface ScheduledTweet {
   status: ScheduleStatus;
   scheduled: string; // "YYYY-MM-DD HH:MM GMT±X" (internal format)
   text: string;
+  thread?: string[]; // additional replies for digest threads (~~~-separated in file)
 }
 
 const SCHEDULE_FILE = 'schedule-twitter.txt';
@@ -62,18 +63,34 @@ export function parseScheduleTxt(content: string): ScheduledTweet[] {
   let currentRepo = '';
   let currentNumber = 0;
   const currentTextLines: string[] = [];
+  const currentThreadParts: string[] = []; // filled when ~~~ separators are found
 
   function flush(): void {
     if (currentScheduled && currentRepo && currentNumber > 0) {
+      let text: string;
+      let thread: string[] | undefined;
+
+      if (currentThreadParts.length > 0) {
+        // Last part is whatever is in currentTextLines
+        currentThreadParts.push(currentTextLines.join('\n').trim());
+        text = currentThreadParts[0];
+        const rest = currentThreadParts.slice(1).filter(p => p.length > 0);
+        if (rest.length > 0) thread = rest;
+      } else {
+        text = currentTextLines.join('\n').trim();
+      }
+
       entries.push({
         repo: currentRepo,
         tweetNumber: currentNumber,
         status: 'SCHEDULED',
         scheduled: currentScheduled,
-        text: currentTextLines.join('\n').trim(),
+        text,
+        ...(thread ? { thread } : {}),
       });
     }
     currentTextLines.length = 0;
+    currentThreadParts.length = 0;
     currentScheduled = '';
     currentRepo = '';
     currentNumber = 0;
@@ -85,6 +102,13 @@ export function parseScheduleTxt(content: string): ScheduledTweet[] {
 
     // Skip separator lines (structural, not content)
     if (/^-{10,}$/.test(line)) continue;
+
+    // Thread separator — flush current text into a thread part
+    if (line === '~~~' && currentScheduled) {
+      currentThreadParts.push(currentTextLines.join('\n').trim());
+      currentTextLines.length = 0;
+      continue;
+    }
 
     // New format header: "repo #N | DD-MM-YYYY | HH:MM (GMT±X)"
     const newHeader = line.match(/^(\S+) #(\d+) \| (\d{2}-\d{2}-\d{4} \| \d{2}:\d{2} \([^)]+\))\s*$/);
@@ -144,7 +168,8 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
 
 /** Serialize a single schedule entry (new visual format). */
 function serializeEntry(e: ScheduledTweet): string {
-  return `${e.repo} #${e.tweetNumber} | ${toDisplayDate(e.scheduled)}\n\n${e.text}`;
+  const parts = [e.text, ...(e.thread ?? [])];
+  return `${e.repo} #${e.tweetNumber} | ${toDisplayDate(e.scheduled)}\n\n${parts.join('\n\n~~~\n\n')}`;
 }
 
 /** Write all SCHEDULED entries to schedule-twitter.txt with a summary header. */
@@ -176,9 +201,17 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
   for (const e of entries) {
     const label = `${e.repo} #${e.tweetNumber}`;
 
-    // Unknown repo (no commits.json found for it)
-    if (!knownRepos.includes(e.repo)) {
+    // Unknown repo (no commits.json found for it) — skip for digest entries
+    if (e.repo !== 'digest' && !knownRepos.includes(e.repo)) {
       errors.push(`${label}: repo "${e.repo}" has no commits.json — run: npm run generate -- ${e.repo}`);
+    }
+
+    // Validate char count for each thread part (main tweet + replies, skip attribution)
+    const tweetParts = e.thread ? [e.text, ...e.thread.slice(0, -1)] : [e.text];
+    for (const part of tweetParts) {
+      if (part.length > 280) {
+        errors.push(`${label}: a thread tweet is ${part.length} chars (max 280) — shorten it before deploying`);
+      }
     }
 
     // Parse and validate the datetime
@@ -216,10 +249,7 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
       seenSlots.set(slotKey, label);
     }
 
-    // Tweet over 280 chars
-    if (e.text.length > 280) {
-      errors.push(`${label}: tweet is ${e.text.length} chars (max 280) — shorten it before deploying`);
-    }
+    // (char limit checked per-thread-part above)
   }
 
   return errors;

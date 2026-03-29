@@ -1,5 +1,11 @@
 github_owner: "your-github-username"
 
+# Repos to monitor for daily digest (npm run digest)
+# Each day's commits across these repos become a thread
+tracked_repos:
+  - your-repo-name
+  # - another-repo
+
 platforms:                  # Which platforms to post to
   - bluesky                 # free (requires BLUESKY_IDENTIFIER + BLUESKY_APP_PASSWORD)
   # - x                     # paid — $0.01/tweet (requires X_API_KEY etc.)

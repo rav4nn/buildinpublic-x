@@ -238,6 +238,92 @@ function parseGeneratedTweets(raw: string, n: number): GeneratedTweet[] {
 }
 
 /**
+ * Build the prompt for a single daily digest tweet (one per repo).
+ */
+function buildDigestPrompt(repoName: string, readme: string, commits: CommitRecord[]): string {
+  const commitList = commits
+    .map((c, i) => `${i + 1}. [${c.date.slice(0, 10)}] ${c.message}`)
+    .join('\n');
+
+  const hasReadme = readme && readme.trim().length > 100;
+  const readmeSection = hasReadme
+    ? `README (primary context for the project):\n${readme}`
+    : readme && readme.trim().length > 0
+      ? `README (brief):\n${readme}`
+      : `README: (none)`;
+
+  return `You are a senior software engineer writing a short daily build update tweet. Your voice is composed, precise, and mildly opinionated — not hype-driven.
+
+PROJECT: ${repoName}
+
+${readmeSection}
+
+TODAY'S COMMITS:
+${commitList}
+
+TASK: Write exactly 1 tweet summarizing today's work on ${repoName}.
+
+TWEET FORMAT — follow this exactly:
+Line 1 (factual): "${repoName}: [what was built or shipped today]." MAX 100 characters.
+Line 2 (reflection): 1 honest sentence about the work. MAX 80 characters.
+[blank line]
+Line 3 (question): A specific, experience-based question ending with "?". MAX 65 characters.
+Line 4: #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
+
+STRICT RULES:
+- NEVER use em dashes (—). Use hyphens (-) instead.
+- NEVER include any URLs.
+- Line 4 MUST start with #buildinpublic — non-negotiable.
+- Questions must be specific and experience-based — something a senior engineer would actually answer.
+- Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
+- HARD LIMIT: total tweet under 280 characters including newlines. Count every character.
+- Return ONLY the tweet text — no JSON, no markdown fences, no extra explanation.`;
+}
+
+/**
+ * Generate a single digest tweet summarising a repo's recent commits.
+ * Used by the daily digest command (npm run digest).
+ */
+export async function generateDigestTweet(
+  repoName: string,
+  readme: string,
+  commits: CommitRecord[]
+): Promise<string> {
+  const config = readConfig();
+  const provider = (process.env.LLM_PROVIDER ?? config.llm_provider ?? 'anthropic').toLowerCase();
+
+  const prompt = buildDigestPrompt(repoName, readme, commits);
+
+  let raw: string;
+  switch (provider) {
+    case 'anthropic': raw = await generateWithAnthropic(prompt); break;
+    case 'openai':    raw = await generateWithOpenAI(prompt); break;
+    case 'gemini':    raw = await generateWithGemini(prompt); break;
+    case 'deepseek':  raw = await generateWithDeepSeek(prompt); break;
+    case 'groq':      raw = await generateWithGroq(prompt); break;
+    default:
+      throw new Error(`Unknown LLM provider: "${provider}". Valid: anthropic | openai | gemini | deepseek | groq`);
+  }
+
+  let text = raw.trim();
+
+  if (text.length > MAX_TWEET_CHARS) {
+    console.log(`  ${repoName} digest: ${text.length} chars — asking LLM to trim...`);
+    const llmTrimmed = await trimTweetWithLLM(text, provider);
+    if (llmTrimmed.length <= MAX_TWEET_CHARS) {
+      text = llmTrimmed;
+    } else {
+      text = enforceCharLimit(llmTrimmed);
+      if (text.length > MAX_TWEET_CHARS) {
+        console.warn(`  Warning: ${repoName} digest tweet is ${text.length} chars — trim it manually.`);
+      }
+    }
+  }
+
+  return text;
+}
+
+/**
  * Generate exactly n tweets for a repo using the configured LLM provider.
  */
 export async function generateTweets(

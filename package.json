@@ -11,6 +11,7 @@
     "post": "ts-node src/index.ts post",
     "status": "ts-node src/index.ts status",
     "setup": "ts-node src/index.ts setup",
+    "digest": "ts-node src/index.ts digest",
     "build": "tsc"
   },
   "dependencies": {

@@ -45,51 +45,95 @@ export async function postCommand(): Promise<void> {
     console.log(`Posting ${entry.repo}#${entry.tweetNumber}: "${entry.text.slice(0, 60)}..."`);
     let anySuccess = false;
 
-    const repoConfig = findRepo(entry.repo);
-    const repoUrl = `github.com/${repoConfig.owner}/${entry.repo}`;
-    const attribution = thread_followup_text ?? `~ posted using ${ATTRIBUTION}`;
-    const replyText = `${attribution}\nFind my project at https://${repoUrl}`;
+    const isDigest = entry.repo === 'digest' || (entry.thread && entry.thread.length > 0);
 
-    // Post to X
-    if (postToX) {
-      try {
-        const tweetId = await postTweet(entry.text);
-        if (thread_followup !== false) {
-          try {
-            await postReply(replyText, tweetId);
-          } catch (replyErr) {
-            console.warn(`  Warning: X follow-up reply failed: ${(replyErr as Error).message}`);
+    if (isDigest && entry.thread) {
+      // Digest thread: chain all parts as replies
+      if (postToX) {
+        try {
+          let parentId = await postTweet(entry.text);
+          for (const part of entry.thread) {
+            try {
+              parentId = await postReply(part, parentId);
+            } catch (replyErr) {
+              console.warn(`  Warning: X thread reply failed: ${(replyErr as Error).message}`);
+              break;
+            }
           }
+          console.log('  ✓ Posted to X (thread)');
+          anySuccess = true;
+        } catch (err) {
+          console.error(`  ✗ X failed: ${(err as Error).message}`);
         }
-        console.log('  ✓ Posted to X');
-        anySuccess = true;
-      } catch (err) {
-        console.error(`  ✗ X failed: ${(err as Error).message}`);
       }
-    }
 
-    // Post to Bluesky
-    if (postToBsky) {
-      try {
-        const ref = await postBluesky(entry.text);
-        if (thread_followup !== false) {
-          try {
-            await postBlueskyReply(replyText, ref, ref);
-          } catch (replyErr) {
-            console.warn(`  Warning: Bluesky follow-up reply failed: ${(replyErr as Error).message}`);
+      if (postToBsky) {
+        try {
+          let rootRef = await postBluesky(entry.text);
+          let parentRef = rootRef;
+          for (const part of entry.thread) {
+            try {
+              parentRef = await postBlueskyReply(part, rootRef, parentRef);
+            } catch (replyErr) {
+              console.warn(`  Warning: Bluesky thread reply failed: ${(replyErr as Error).message}`);
+              break;
+            }
           }
+          console.log('  ✓ Posted to Bluesky (thread)');
+          anySuccess = true;
+        } catch (err) {
+          console.error(`  ✗ Bluesky failed: ${(err as Error).message}`);
         }
-        console.log('  ✓ Posted to Bluesky');
-        anySuccess = true;
-      } catch (err) {
-        console.error(`  ✗ Bluesky failed: ${(err as Error).message}`);
+      }
+    } else {
+      // Normal single tweet with optional attribution reply
+      const repoConfig = findRepo(entry.repo);
+      const repoUrl = `github.com/${repoConfig.owner}/${entry.repo}`;
+      const attribution = thread_followup_text ?? `~ posted using ${ATTRIBUTION}`;
+      const replyText = `${attribution}\nFind my project at https://${repoUrl}`;
+
+      if (postToX) {
+        try {
+          const tweetId = await postTweet(entry.text);
+          if (thread_followup !== false) {
+            try {
+              await postReply(replyText, tweetId);
+            } catch (replyErr) {
+              console.warn(`  Warning: X follow-up reply failed: ${(replyErr as Error).message}`);
+            }
+          }
+          console.log('  ✓ Posted to X');
+          anySuccess = true;
+        } catch (err) {
+          console.error(`  ✗ X failed: ${(err as Error).message}`);
+        }
+      }
+
+      if (postToBsky) {
+        try {
+          const ref = await postBluesky(entry.text);
+          if (thread_followup !== false) {
+            try {
+              await postBlueskyReply(replyText, ref, ref);
+            } catch (replyErr) {
+              console.warn(`  Warning: Bluesky follow-up reply failed: ${(replyErr as Error).message}`);
+            }
+          }
+          console.log('  ✓ Posted to Bluesky');
+          anySuccess = true;
+        } catch (err) {
+          console.error(`  ✗ Bluesky failed: ${(err as Error).message}`);
+        }
       }
     }
 
     if (anySuccess) {
       const postedAt = formatLocalTime(nowUtc, timezone);
       removeScheduleEntry(entry.repo, entry.tweetNumber);
-      archiveTweet(entry.repo, entry.tweetNumber, postedAt);
+      // Digest entries have no tweets.txt — only remove from schedule (done above)
+      if (entry.repo !== 'digest') {
+        archiveTweet(entry.repo, entry.tweetNumber, postedAt);
+      }
       posted++;
     } else {
       failed++;
