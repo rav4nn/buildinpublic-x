@@ -238,8 +238,9 @@ export function validateSchedule(entries: ScheduledTweet[], knownRepos: string[]
     }
 
     if (scheduledDate) {
-      // Past datetime
-      if (scheduledDate < nowUtc) {
+      // Past datetime (allow 45-minute grace period for cron delays)
+      const graceMs = 45 * 60 * 1000;
+      if (scheduledDate.getTime() + graceMs < nowUtc.getTime()) {
         errors.push(`${label}: scheduled time "${e.scheduled}" is in the past — update or remove it`);
       }
 
