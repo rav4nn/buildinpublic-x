@@ -36,13 +36,32 @@ async function createSession(): Promise<Session> {
   return data;
 }
 
+function buildLinkFacets(text: string) {
+  const urlRegex = /https?:\/\/[^\s]+/g;
+  const encoder = new TextEncoder();
+  const facets = [];
+  let match;
+  while ((match = urlRegex.exec(text)) !== null) {
+    const url = match[0].replace(/[.,;:!?)\]'"]+$/, '');
+    const byteStart = encoder.encode(text.slice(0, match.index)).length;
+    const byteEnd = byteStart + encoder.encode(url).length;
+    facets.push({
+      index: { byteStart, byteEnd },
+      features: [{ $type: 'app.bsky.richtext.facet#link', uri: url }],
+    });
+  }
+  return facets;
+}
+
 export async function postBluesky(text: string): Promise<StrongRef> {
   const session = await createSession();
+  const facets = buildLinkFacets(text);
   const record = {
     $type: 'app.bsky.feed.post',
     text,
     createdAt: new Date().toISOString(),
     langs: ['en'],
+    ...(facets.length > 0 ? { facets } : {}),
   };
   const data = await bskyFetch('com.atproto.repo.createRecord', {
     repo: session.did,
@@ -54,12 +73,14 @@ export async function postBluesky(text: string): Promise<StrongRef> {
 
 export async function postBlueskyReply(text: string, root: StrongRef, parent: StrongRef): Promise<StrongRef> {
   const session = await createSession();
+  const facets = buildLinkFacets(text);
   const record = {
     $type: 'app.bsky.feed.post',
     text,
     createdAt: new Date().toISOString(),
     langs: ['en'],
     reply: { root, parent },
+    ...(facets.length > 0 ? { facets } : {}),
   };
   const data = await bskyFetch('com.atproto.repo.createRecord', {
     repo: session.did,
