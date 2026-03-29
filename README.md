@@ -1,6 +1,6 @@
 # buildinpublic-x
 
-Turn your GitHub commits into actually good tweets using an LLM
+Summarize your github commits for the day/week to make actually good tweets using an LLM
 
 github green squares → twitter/bluesky posts
 
@@ -16,14 +16,15 @@ but
 * you forget to post
 * writing tweets feels like extra work
 
-Meanwhile your commits already tell the story
-they just don’t sound like tweets
+Your commits already tell the story!
+They just don’t sound like tweets
 
 ---
 
 ## What this does
 
-* reads your commits
+* reads your commits over a day/week
+* summarizes them with context from your readme 
 * uses an LLM (you choose) to turn them into clear, relevant tweets
 * lets you review and edit
 * schedules and posts automatically
