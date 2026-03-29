@@ -5,7 +5,6 @@ import { fetchCommand } from './commands/fetch';
 import { generateCommand } from './commands/generate';
 import { approveCommand } from './commands/approve';
 import { deployCommand } from './commands/deploy';
-import { autoGenerateCommand } from './commands/autogenerate';
 import { postCommand } from './commands/post';
 import { statusCommand } from './commands/status';
 import { setupCommand } from './commands/setup';
@@ -21,14 +20,13 @@ async function main(): Promise<void> {
     case 'generate':      await generateCommand(cmdArgs); break;
     case 'approve':       await approveCommand(); break;
     case 'deploy':        await deployCommand(); break;
-    case 'auto-generate': await autoGenerateCommand(); break;
     case 'post':          await postCommand(); break;
     case 'status':        await statusCommand(); break;
     case 'setup':         await setupCommand(cmdArgs); break;
     case 'digest':        await digestCommand(cmdArgs); break;
     default:
       console.error(`Unknown command: "${command}"`);
-      console.error('Commands: fetch | generate | approve | deploy | auto-generate | post | status | setup | digest');
+      console.error('Commands: fetch | generate | approve | deploy | post | status | setup | digest');
       process.exit(1);
   }
 }

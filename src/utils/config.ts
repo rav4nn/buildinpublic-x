@@ -18,7 +18,6 @@ export interface AppConfig {
   digest_time: string;      // "HH:MM" — when to post the daily digest
   digest_days: number;      // days between digest posts — also the commit lookback window (default: 1)
   old_post_times: string[]; // ["09:00", "13:00", ...] — post times for the per-repo generate flow
-  auto_generate: boolean;   // enable hourly cron — runs digest (if tracked_repos set) or per-repo generation
   paused: boolean;         // kill switch
 }
 
@@ -42,7 +41,6 @@ export function readConfig(): AppConfig {
     llm_provider: raw.llm_provider ?? 'anthropic',
     digest_time: raw.digest_time ?? '21:00',
     old_post_times: raw.old_post_times ?? (raw as any).post_times ?? ['09:00', '13:00', '17:00', '21:00'],
-    auto_generate: raw.auto_generate ?? false,
     paused: raw.paused ?? false,
   };
 }

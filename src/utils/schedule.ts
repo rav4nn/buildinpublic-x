@@ -147,9 +147,9 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
   const sorted = [...entries].sort((a, b) => a.scheduled.localeCompare(b.scheduled));
   const lastScheduled = sorted[sorted.length - 1]?.scheduled ?? 'none';
   const times = config.old_post_times.join(', ');
-  const autoStatus = config.auto_generate
-    ? 'ON — picks up new commits 4x/day automatically'
-    : 'OFF — run: npm run auto-generate to pick up new commits';
+  const autoStatus = config.tracked_repos?.length
+    ? `ON — digest runs every ${config.digest_days ?? 1} day(s) via GitHub Actions`
+    : 'OFF — set tracked_repos in config.yml to enable';
 
   return [
     '# Tweet Schedule',

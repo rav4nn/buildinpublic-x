@@ -18,7 +18,6 @@ digest_time: "21:00"        # when to post the daily digest (your local timezone
 digest_days: 1              # days between digest posts — also sets the commit lookback window
                             # digest_days: 1 = post daily, include today's commits
                             # digest_days: 7 = post weekly, include last 7 days of commits
-auto_generate: false        # set true to run digest daily via GitHub Actions
 paused: false               # kill switch — set true + run: npm run deploy to stop all tweets
 
 # --- Secondary feature: tweet about older/existing projects ---

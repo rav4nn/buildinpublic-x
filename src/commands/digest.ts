@@ -17,9 +17,8 @@ export async function digestCommand(args: string[]): Promise<void> {
   }
 
   if (!config.tracked_repos || config.tracked_repos.length === 0) {
-    console.error('No tracked_repos set in config.yml. Add the repos you want to monitor:');
-    console.error('\ntracked_repos:\n  - your-repo-name\n  - another-repo');
-    process.exit(1);
+    console.log('No tracked_repos set in config.yml. Add repos to monitor:\n\ntracked_repos:\n  - your-repo-name');
+    return;
   }
 
   const preview = args.includes('preview');

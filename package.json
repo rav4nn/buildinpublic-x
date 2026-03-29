@@ -7,7 +7,6 @@
     "generate": "ts-node src/index.ts generate",
     "approve": "ts-node src/index.ts approve",
     "deploy": "ts-node src/index.ts deploy",
-    "auto-generate": "ts-node src/index.ts auto-generate",
     "post": "ts-node src/index.ts post",
     "status": "ts-node src/index.ts status",
     "setup": "ts-node src/index.ts setup",
