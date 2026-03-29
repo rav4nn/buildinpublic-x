@@ -2,7 +2,7 @@
 
 Turn your GitHub commits into a daily build-in-public thread - automatically.
 
-daily github green squares → nightly twitter/bluesky post
+daily github green squares -> nightly twitter/bluesky post
 
 ---
 
@@ -31,21 +31,20 @@ They just don't sound like tweets
 
 ---
 
-## Example
-
-![Posted tweet with GitHub project link preview](assets/x.com_rav4nn.png)
-
----
-
 ## What happens when you build in public
 
-Within a day of auto-posting about my projects, I got this from an acquaintance —
+Within a day of auto-posting about my projects, I got this from an acquaintance:
 
-![WhatsApp message from an acquaintance after seeing the build-in-public post](assets/Screenshot_20260329-170003_WhatsApp.png)
+<table>
+<tr>
+<td><img src="assets/x.com_rav4nn.png" width="380" alt="Auto-posted tweet about youtube-rag-scraper project"/></td>
+<td><img src="assets/Screenshot_20260329-170003_WhatsApp.png" width="380" alt="WhatsApp message asking to use the project"/></td>
+</tr>
+</table>
 
 ---
 
-## Daily digest — the main feature
+## Daily digest - the main feature
 
 Set `tracked_repos` in `config.yml` and the tool does the rest.
 
@@ -53,7 +52,7 @@ Every day (or however often you want), it:
 
 1. Fetches commits from each of your tracked repos since the last post
 2. Generates one tweet per repo summarizing the work
-3. Assembles them into a thread — first repo as the main tweet, others as replies, attribution as the final reply
+3. Assembles them into a thread - first repo as the main tweet, others as replies, attribution as the final reply
 4. Schedules it for `digest_time` and posts automatically via GitHub Actions
 
 ```yaml
@@ -76,10 +75,10 @@ npm run digest preview
 ## How it works
 
 1. Fork this repo on GitHub
-2. Add your API keys (LLM + X or Bluesky) as GitHub Secrets — `npm run setup` does this for you
+2. Add your API keys (LLM + X or Bluesky) as GitHub Secrets - `npm run setup` does this for you
 3. Set `tracked_repos`, `digest_time`, and `digest_days` in `config.yml`
 4. Run `npm run deploy` to push your config live
-5. GitHub Actions handles everything from here — digest generates, schedules, and posts on its own
+5. GitHub Actions handles everything from here - digest generates, schedules, and posts on its own
 
 ---
 
@@ -107,11 +106,9 @@ npm run digest force
 
 ```
 
-![schedule-twitter.txt showing queued tweets](assets/schedule_tweets.png)
-
 ---
 
-## Older projects — generate tweets on demand
+## Older projects - generate tweets on demand
 
 For repos you're not actively committing to, use the manual flow:
 
@@ -131,13 +128,13 @@ npm run deploy
 
 ## Platforms
 
-### Bluesky — free, no approval needed
+### Bluesky - free, no approval needed
 
-Go to Bluesky → Settings → Privacy and Security → App Passwords → Add App Password. Copy the generated password — that's your `BLUESKY_APP_PASSWORD`. Your identifier is your handle e.g. `yourname.bsky.social`.
+Go to Bluesky -> Settings -> Privacy and Security -> App Passwords -> Add App Password. Copy the generated password - that's your `BLUESKY_APP_PASSWORD`. Your identifier is your handle e.g. `yourname.bsky.social`.
 
 This is the default platform in `config.yml`. Zero cost, works immediately.
 
-### X (Twitter) — pay per use
+### X (Twitter) - pay per use
 
 Apply for a developer account at [developer.twitter.com](https://developer.twitter.com). Be specific in the use case form: *"Personal automation to post my GitHub commits to my X account. No scraping, no third-party data."*
 
