@@ -22,8 +22,9 @@ export async function digestCommand(args: string[]): Promise<void> {
     process.exit(1);
   }
 
+  const preview = args.includes('--preview');
   const daysArg = args.find(a => a.startsWith('--days='));
-  const days = daysArg ? parseInt(daysArg.split('=')[1], 10) : 1;
+  const days = daysArg ? parseInt(daysArg.split('=')[1], 10) : (config.digest_days ?? 1);
 
   if (isNaN(days) || days < 1) {
     console.error('--days must be a positive integer');
@@ -121,11 +122,7 @@ export async function digestCommand(args: string[]): Promise<void> {
     thread: threadReplies,
   };
 
-  const existing = existingSchedule.filter(e => e.status === 'SCHEDULED');
-  writeSchedule([...existing, newEntry], config);
-
   // Print thread preview
-  console.log(`\n✓ Digest #${newEntry.tweetNumber} scheduled for ${scheduled}`);
   console.log('\n--- Thread preview ---\n');
   console.log(`Tweet:\n${mainText}`);
   for (let i = 0; i < threadReplies.length; i++) {
@@ -133,5 +130,15 @@ export async function digestCommand(args: string[]): Promise<void> {
     console.log(`\n${label}:\n${threadReplies[i]}`);
   }
   console.log('\n----------------------');
-  console.log('\n  Review/edit schedule-twitter.txt, then run: npm run deploy');
+
+  if (preview) {
+    console.log('\n  Preview only — nothing was scheduled. Run without --preview to schedule.');
+    return;
+  }
+
+  const existing = existingSchedule.filter(e => e.status === 'SCHEDULED');
+  writeSchedule([...existing, newEntry], config);
+
+  console.log(`\n✓ Digest #${newEntry.tweetNumber} scheduled for ${scheduled}`);
+  console.log('  Review/edit schedule-twitter.txt, then run: npm run deploy');
 }

@@ -16,10 +16,11 @@ export async function autoGenerateCommand(): Promise<void> {
     return;
   }
 
-  // If tracked_repos is configured, run daily digest instead of per-repo generation
+  // If tracked_repos is configured, run digest instead of per-repo generation
   if (config.tracked_repos && config.tracked_repos.length > 0) {
-    console.log(`tracked_repos set — running daily digest across ${config.tracked_repos.length} repo(s)`);
-    await digestCommand(['--days=1']);
+    const days = config.digest_days ?? 1;
+    console.log(`tracked_repos set — running digest (last ${days} day(s)) across ${config.tracked_repos.length} repo(s)`);
+    await digestCommand([`--days=${days}`]);
     await deployCommand();
     return;
   }

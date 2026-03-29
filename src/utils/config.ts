@@ -16,6 +16,7 @@ export interface AppConfig {
   thread_followup_text: string;
   llm_provider: string;
   post_times: string[];    // ["09:00", "13:00", ...] — up to 8, local timezone
+  digest_days: number;     // how many days of commits to include per digest (default: 1)
   auto_generate: boolean;  // enable hourly cron — runs digest (if tracked_repos set) or per-repo generation
   paused: boolean;         // kill switch
 }
@@ -32,6 +33,7 @@ export function readConfig(): AppConfig {
   return {
     github_owner: raw.github_owner ?? '',
     tracked_repos: raw.tracked_repos ?? [],
+    digest_days: raw.digest_days ?? 1,
     platforms: raw.platforms ?? ['x'],
     timezone: raw.timezone ?? 'GMT+0',
     thread_followup: raw.thread_followup ?? true,
