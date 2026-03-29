@@ -1,9 +1,12 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { readConfig, formatLocalTime, parseLocalTime, findRepo } from '../utils/config';
 import { readSchedule, removeScheduleEntry } from '../utils/schedule';
 import { archiveTweet } from '../utils/tweets';
 import { postTweet, postReply } from '../utils/twitter';
 import { postBluesky, postBlueskyReply } from '../utils/bluesky';
 import { statusCommand } from './status';
+import { DIGEST_STATE_FILE } from './digest';
 
 const ATTRIBUTION = 'github.com/rav4nn/buildinpublic-x';
 
@@ -130,8 +133,14 @@ export async function postCommand(): Promise<void> {
     if (anySuccess) {
       const postedAt = formatLocalTime(nowUtc, timezone);
       removeScheduleEntry(entry.repo, entry.tweetNumber);
-      // Digest entries have no tweets.txt — only remove from schedule (done above)
-      if (entry.repo !== 'digest') {
+      if (entry.repo === 'digest') {
+        // Record post time as the cutoff for the next digest's commit window
+        fs.writeFileSync(
+          path.join(process.cwd(), DIGEST_STATE_FILE),
+          JSON.stringify({ lastDigestAt: nowUtc.toISOString() }, null, 2),
+          'utf-8'
+        );
+      } else {
         archiveTweet(entry.repo, entry.tweetNumber, postedAt);
       }
       posted++;
