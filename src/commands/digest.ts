@@ -72,8 +72,8 @@ export async function digestCommand(args: string[]): Promise<void> {
 
   // Attribution tweet — always the final reply in the thread
   const attribution = thread_followup_text ?? `~ posted using ${ATTRIBUTION_TOOL}`;
-  const projectLinks = config.tracked_repos
-    .map(r => `https://github.com/${github_owner}/${r}`)
+  const projectLinks = repoTweets
+    .map(r => `https://github.com/${github_owner}/${r.repo}`)
     .join('\n');
   const attributionTweet = `${attribution}\nFind my projects at:\n${projectLinks}`;
 
