@@ -15,7 +15,9 @@ llm_provider: "anthropic"  # anthropic | openai | gemini | deepseek | groq
 thread_followup: true
 thread_followup_text: "~ posted using github.com/rav4nn/buildinpublic-x"
 digest_time: "21:00"        # when to post the daily digest (your local timezone)
-digest_days: 1              # how many days of commits to include per digest (default: 1)
+digest_days: 1              # days between digest posts — also sets the commit lookback window
+                            # digest_days: 1 = post daily, include today's commits
+                            # digest_days: 7 = post weekly, include last 7 days of commits
 auto_generate: false        # set true to run digest daily via GitHub Actions
 paused: false               # kill switch — set true + run: npm run deploy to stop all tweets
 

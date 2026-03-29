@@ -19,7 +19,22 @@ export async function autoGenerateCommand(): Promise<void> {
   // If tracked_repos is configured, run digest instead of per-repo generation
   if (config.tracked_repos && config.tracked_repos.length > 0) {
     const days = config.digest_days ?? 1;
-    console.log(`tracked_repos set — running digest (last ${days} day(s)) across ${config.tracked_repos.length} repo(s)`);
+
+    // Skip if a digest was already generated within the last digest_days days
+    const stateFile = path.join(process.cwd(), '.digest-state.json');
+    if (fs.existsSync(stateFile)) {
+      const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+      if (state.lastDigestAt) {
+        const daysSince = (Date.now() - new Date(state.lastDigestAt).getTime()) / (1000 * 60 * 60 * 24);
+        if (daysSince < days) {
+          const daysLeft = Math.ceil(days - daysSince);
+          console.log(`Last digest was ${Math.floor(daysSince)} day(s) ago. Next digest in ${daysLeft} day(s).`);
+          return;
+        }
+      }
+    }
+
+    console.log(`Running digest (last ${days} day(s)) across ${config.tracked_repos.length} repo(s)`);
     await digestCommand([`${days}`]);
     await deployCommand();
     return;

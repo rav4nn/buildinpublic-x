@@ -16,7 +16,7 @@ export interface AppConfig {
   thread_followup_text: string;
   llm_provider: string;
   digest_time: string;      // "HH:MM" — when to post the daily digest
-  digest_days: number;      // how many days of commits to include per digest (default: 1)
+  digest_days: number;      // days between digest posts — also the commit lookback window (default: 1)
   old_post_times: string[]; // ["09:00", "13:00", ...] — post times for the per-repo generate flow
   auto_generate: boolean;   // enable hourly cron — runs digest (if tracked_repos set) or per-repo generation
   paused: boolean;         // kill switch

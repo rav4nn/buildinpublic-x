@@ -131,6 +131,10 @@ export async function digestCommand(args: string[]): Promise<void> {
   const existing = existingSchedule.filter(e => e.status === 'SCHEDULED');
   writeSchedule([...existing, newEntry], config);
 
+  // Record when this digest was generated so auto-generate can enforce digest_days interval
+  const stateFile = path.join(process.cwd(), '.digest-state.json');
+  fs.writeFileSync(stateFile, JSON.stringify({ lastDigestAt: new Date().toISOString() }, null, 2), 'utf-8');
+
   console.log(`\n✓ Digest #${newEntry.tweetNumber} scheduled for ${scheduled}`);
   console.log('  Review/edit schedule-twitter.txt, then run: npm run deploy');
 }
