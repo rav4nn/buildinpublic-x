@@ -151,19 +151,31 @@ function buildHeader(entries: ScheduledTweet[], config: AppConfig): string {
     ? `ON — digest runs every ${config.digest_days ?? 1} day(s) via GitHub Actions`
     : 'OFF — set tracked_repos in config.yml to enable';
 
-  return [
+  const lines = [
     '# Tweet Schedule',
-    `# Generated: ${formatLocalTime(nowUtc, config.timezone)}`,
-    `# Posting at: ${times} ${config.timezone} (${config.old_post_times.length}/day)`,
-    `# Queue runs through: ${lastScheduled}`,
-    `# Auto-generate: ${autoStatus}`,
-    `# Kill switch: set paused: true in config.yml, then run: npm run deploy`,
-    '#',
+    '',
     '# Edit the scheduled times below freely, then run: npm run deploy',
     '',
+    `# Generated: ${formatLocalTime(nowUtc, config.timezone)}`,
+    `# Auto-generate: ${autoStatus}`,
+  ];
+
+  if (config.tracked_repos?.length && config.digest_time) {
+    lines.push(`# Digest posts at: ${config.digest_time} ${config.timezone}`);
+  }
+
+  lines.push(
+    '',
+    `# Old Repos post at: ${times} ${config.timezone} (${config.old_post_times.length}/day)`,
+    `# Queue runs through: ${lastScheduled}`,
+    '',
+    '# Kill switch: set paused: true in config.yml, then run: npm run deploy',
     '',
     '',
-  ].join('\n');
+    '',
+  );
+
+  return lines.join('\n');
 }
 
 /** Serialize a single schedule entry (new visual format). */
