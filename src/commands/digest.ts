@@ -33,11 +33,18 @@ export async function digestCommand(args: string[]): Promise<void> {
   const { github_owner, timezone, digest_time, thread_followup_text } = config;
   if (!github_owner) throw new Error('github_owner not set in config.yml');
 
-  const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - days);
-  cutoff.setUTCHours(0, 0, 0, 0);
+  // Cutoff = when the last digest was posted, so each digest covers exactly what changed since then.
+  // Falls back to `days * 24h ago` on first run (no state file yet).
+  let cutoff: Date;
+  const stateFile = path.join(process.cwd(), '.digest-state.json');
+  if (fs.existsSync(stateFile)) {
+    const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+    cutoff = state.lastDigestAt ? new Date(state.lastDigestAt) : new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  } else {
+    cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  }
 
-  console.log(`\nDigest: scanning last ${days} day(s) across ${config.tracked_repos.length} repo(s)...\n`);
+  console.log(`\nDigest: scanning commits since ${cutoff.toISOString()} across ${config.tracked_repos.length} repo(s)...\n`);
 
   const repoTweets: Array<{ repo: string; tweet: string }> = [];
 
@@ -130,8 +137,7 @@ export async function digestCommand(args: string[]): Promise<void> {
   const existing = existingSchedule.filter(e => e.status === 'SCHEDULED');
   writeSchedule([...existing, newEntry], config);
 
-  // Record when this digest was generated so auto-generate can enforce digest_days interval
-  const stateFile = path.join(process.cwd(), '.digest-state.json');
+  // Record when this digest was generated (used as cutoff for next digest + interval enforcement)
   fs.writeFileSync(stateFile, JSON.stringify({ lastDigestAt: new Date().toISOString() }, null, 2), 'utf-8');
 
   console.log(`\n✓ Digest #${newEntry.tweetNumber} scheduled for ${scheduled}`);
