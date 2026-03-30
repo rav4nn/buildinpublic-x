@@ -28,12 +28,13 @@ function updateWorkflowCrons(config: ReturnType<typeof readConfig>): void {
     .join('\n');
 
   const current = fs.readFileSync(workflowPath, 'utf-8');
-  const updated = current.replace(
+  const normalized = current.replace(/\r\n/g, '\n');
+  const updated = normalized.replace(
     /  schedule:\n(    - cron: "[^"]*"[^\n]*\n)+/,
     `  schedule:\n${cronLines}\n`
   );
 
-  if (updated !== current) {
+  if (updated !== normalized) {
     fs.writeFileSync(workflowPath, updated, 'utf-8');
     console.log(`  Updated workflow crons: ${[...times].join(', ')} ${config.timezone}`);
   }

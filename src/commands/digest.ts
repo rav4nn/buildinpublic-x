@@ -63,7 +63,7 @@ export async function digestCommand(args: string[]): Promise<void> {
 
   const repoTweets: Array<{ repo: string; tweet: string }> = [];
 
-  for (const repoName of config.tracked_repos) {
+  for (const repoName of config.tracked_repos.filter(Boolean)) {
     process.stdout.write(`  ${repoName}: fetching commits... `);
     await fetchCommand([repoName]);
 
