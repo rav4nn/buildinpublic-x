@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { readConfig, readRepos, parseTzOffset } from '../utils/config';
-import { readSchedule, writeSchedule, validateSchedule } from '../utils/schedule';
+import { readSchedule, writeSchedule, validateSchedule, ScheduledTweet } from '../utils/schedule';
 
 /** Convert a "HH:MM" local time + timezone string to a cron expression in UTC. */
 function toCronUTC(timeStr: string, timezone: string): string {
@@ -12,18 +12,38 @@ function toCronUTC(timeStr: string, timezone: string): string {
   return `${utcMinutes % 60} ${Math.floor(utcMinutes / 60)} * * *`;
 }
 
-/** Regenerate post.yml with cron entries matching the user's configured post times. */
-function updateWorkflowCrons(config: ReturnType<typeof readConfig>): void {
+/** Add 5 minutes to a "HH:MM" string, wrapping across hour/day boundaries. */
+function addMinutes(timeStr: string, mins: number): string {
+  const [h, m] = timeStr.split(':').map(Number);
+  const total = (h * 60 + m + mins) % 1440;
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Regenerate post.yml cron entries from the actual scheduled tweet times.
+ * Each scheduled time gets a cron at that exact time plus a +5 min safety run.
+ */
+function updateWorkflowCrons(config: ReturnType<typeof readConfig>, entries: ScheduledTweet[]): void {
   const workflowPath = path.join(process.cwd(), '.github', 'workflows', 'post.yml');
   if (!fs.existsSync(workflowPath)) return;
 
+  // Extract unique HH:MM local times from the schedule
   const times = new Set<string>();
-  if (config.digest_time) times.add(config.digest_time);
-  for (const t of (config.old_post_times ?? [])) times.add(t);
+  for (const entry of entries) {
+    const match = entry.scheduled.match(/^\d{4}-\d{2}-\d{2} (\d{2}:\d{2})/);
+    if (match) times.add(match[1]);
+  }
 
   if (times.size === 0) return;
 
-  const cronLines = [...times]
+  // For each time, emit the exact cron and a +5 min safety cron
+  const allTimes = new Set<string>();
+  for (const t of times) {
+    allTimes.add(t);
+    allTimes.add(addMinutes(t, 5));
+  }
+
+  const cronLines = [...allTimes]
     .map(t => `    - cron: "${toCronUTC(t, config.timezone)}"   # ${t} ${config.timezone}`)
     .join('\n');
 
@@ -36,7 +56,7 @@ function updateWorkflowCrons(config: ReturnType<typeof readConfig>): void {
 
   if (updated !== normalized) {
     fs.writeFileSync(workflowPath, updated, 'utf-8');
-    console.log(`  Updated workflow crons: ${[...times].join(', ')} ${config.timezone}`);
+    console.log(`  Updated workflow crons: ${[...times].join(', ')} ${config.timezone} (+ 5 min safety runs)`);
   }
 }
 
@@ -66,7 +86,7 @@ export async function deployCommand(): Promise<void> {
 
     // Only update workflow crons locally — CI can't push workflow file changes
     if (!process.env.GITHUB_ACTIONS) {
-      updateWorkflowCrons(config);
+      updateWorkflowCrons(config, schedule);
     }
 
     // Ensure git user is configured (required when running inside GitHub Actions)
