@@ -65,7 +65,14 @@ export async function digestCommand(args: string[]): Promise<void> {
 
   for (const repoName of config.tracked_repos.filter(Boolean)) {
     process.stdout.write(`  ${repoName}: fetching commits... `);
-    await fetchCommand([repoName]);
+    try {
+      await fetchCommand([repoName]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`Cannot access ${github_owner}/${repoName}. Remove or fix "${repoName}" in config.yml under tracked_repos.`);
+      console.warn(`  Skipping repo and continuing digest. Reason: ${message}`);
+      continue;
+    }
 
     const cacheFile = path.join(cwd, repoName, 'commits.json');
     if (!fs.existsSync(cacheFile)) {
