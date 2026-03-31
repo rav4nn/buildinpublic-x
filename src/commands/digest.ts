@@ -104,7 +104,9 @@ export async function digestCommand(args: string[]): Promise<void> {
     attributionTweet,
   ];
 
-  // Schedule at digest_time — today if still in the future, otherwise tomorrow
+  // Schedule at digest_time. If the workflow starts right at that minute
+  // (or a little late), keep the digest on today's slot so the following
+  // post step can publish it in the same run.
   const time = digest_time ?? '21:00';
   const tzOffsetMin = parseTzOffset(timezone);
   const nowUtc = new Date();
@@ -113,7 +115,10 @@ export async function digestCommand(args: string[]): Promise<void> {
   const nowLocalMinutes = new Date(nowLocalMs).getUTCHours() * 60 + new Date(nowLocalMs).getUTCMinutes();
   const [hours, minutes] = time.split(':').map(Number);
   const targetMinutes = hours * 60 + minutes;
-  const dayMs = targetMinutes > nowLocalMinutes + 5
+  const sameDayGraceMinutes = 15;
+  const isTodaySlot =
+    targetMinutes >= nowLocalMinutes - sameDayGraceMinutes;
+  const dayMs = isTodaySlot
     ? todayLocalMidnightMs
     : todayLocalMidnightMs + 24 * 60 * 60 * 1000;
   const slotUtcMs = dayMs - tzOffsetMin * 60 * 1000 + hours * 3600000 + minutes * 60000;
