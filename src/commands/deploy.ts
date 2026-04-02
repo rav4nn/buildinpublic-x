@@ -30,7 +30,9 @@ function updateWorkflowCrons(config: ReturnType<typeof readConfig>, entries: Sch
   const times = new Set<string>();
   if (config.digest_time) times.add(config.digest_time);
   for (const t of (config.old_post_times ?? [])) times.add(t);
+  // Only add per-entry crons for old-repo tweets (not digest — digest is always at digest_time)
   for (const entry of entries) {
+    if (entry.repo === 'digest') continue;
     const match = entry.scheduled.match(/^\d{4}-\d{2}-\d{2} (\d{2}:\d{2})/);
     if (match) {
       times.add(match[1]);
