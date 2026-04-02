@@ -59,6 +59,17 @@ export async function digestCommand(args: string[]): Promise<void> {
     return;
   }
 
+  // Skip if digest_days interval hasn't elapsed since last post
+  if (lastDigestAt && !preview && !force) {
+    const elapsedMs = Date.now() - lastDigestAt.getTime();
+    const intervalMs = days * 24 * 60 * 60 * 1000;
+    if (elapsedMs < intervalMs) {
+      const daysLeft = Math.ceil((intervalMs - elapsedMs) / (24 * 60 * 60 * 1000));
+      console.log(`Digest interval not elapsed — next digest in ${daysLeft} day(s). Set digest_days: 1 for daily posts.`);
+      return;
+    }
+  }
+
   console.log(`\nDigest: scanning commits since ${cutoff.toISOString()} across ${config.tracked_repos.length} repo(s)...\n`);
 
   const repoTweets: Array<{ repo: string; tweet: string }> = [];
