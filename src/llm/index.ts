@@ -62,16 +62,14 @@ TWEET FORMAT — follow this structure exactly for every tweet:
 Line 1 (factual): project context + what happened. MAX 110 characters.
 Line 2 (reflection): 1 sentence of honest reflection. No question. MAX 80 characters.
 [blank line]
-Line 3 (question): The experience-based question, isolated. MAX 60 characters.
-Line 4: hashtags only — always #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
+Line 3: hashtags only — always #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
 
 CHARACTER BUDGET — Twitter counts every character including newlines:
-- Line 1: max 90 chars + newline
-- Line 2: max 60 chars + newline
+- Line 1: max 110 chars + newline
+- Line 2: max 80 chars + newline
 - blank line: 1
-- Line 3 (question): max 65 chars + newline
-- Line 4 (hashtags): #buildinpublic + 1 tag = ~25 chars
-- TOTAL TARGET: under 250. Hard limit: 280.
+- Line 3 (hashtags): #buildinpublic + 1 tag = ~25 chars
+- TOTAL TARGET: under 220. Hard limit: 280.
 
 TWEET 1 — introduce the project:
 "Started building ${repoName} today - [one clause: what it does]. [what you shipped]."
@@ -80,17 +78,16 @@ TWEET 2 onwards — drop the project description, just the repo name and what ha
 "Building ${repoName}: [what happened in this commit]. Keep line 1 under 90 chars."
 
 EXAMPLE of correct output — count this, it fits:
-"Building flux-rag: Phase 2 done - chunking, embeddings, vector store, retrieval all connected.\nFirst run without mocks. Composing pieces is harder than building them.\n\nWhere do RAG pipelines tend to break for you?\n#buildinpublic #rag"
+"Building flux-rag: Phase 2 done - chunking, embeddings, vector store, retrieval all connected.\nFirst run without mocks. Composing pieces is harder than building them.\n\n#buildinpublic #rag"
 
 STRICT RULES — violations will make the output unusable:
 - NEVER use em dashes (—) anywhere. Use a hyphen (-) or restructure the sentence.
 - NEVER include a GitHub URL in the tweet body — it will be added separately
-- NEVER use generic questions ("any thoughts?", "agree?", "what do you think?")
-- Line 4 MUST exist and MUST start with #buildinpublic — this is non-negotiable. Example: "#buildinpublic #rag"
-- Questions must be experience-based and specific — something a senior engineer would actually want to answer
+- NEVER include a question anywhere in the tweet
+- Line 3 MUST exist and MUST start with #buildinpublic — this is non-negotiable. Example: "#buildinpublic #rag"
 - Subtle emotion is good: "always a tense moment", "hard to validate upfront", "raises questions"
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
-- If README is missing or vague, write: "Building ${repoName}: [best description from commits]. What has your experience been with projects like this?"
+- If README is missing or vague, write: "Building ${repoName}: [best description from commits]."
 - HARD LIMIT: total tweet under 280 characters. Count every character including newlines. Be ruthless.
 - Return a valid JSON array of exactly ${n} objects — no markdown fences, no extra text:
 
@@ -184,9 +181,8 @@ async function trimTweetWithLLM(text: string, provider: string): Promise<string>
   const prompt = `This tweet is ${text.length} characters, over Twitter's 280-char limit. Trim it to under 275 characters.
 
 RULES:
-- Keep the question line (the line ending with "?") EXACTLY as-is
 - Keep the hashtag line EXACTLY as-is
-- Keep the blank line between reflection and question EXACTLY as-is
+- Keep the blank line before the hashtags EXACTLY as-is
 - Only shorten the first line (factual) and/or second line (reflection)
 - Do NOT add any new text, only remove words
 - Return ONLY the trimmed tweet text, nothing else
@@ -267,14 +263,13 @@ TWEET FORMAT — follow this exactly:
 Line 1 (factual): "${repoName}: [what was built or shipped today]." MAX 100 characters.
 Line 2 (reflection): 1 honest sentence about the work. MAX 80 characters.
 [blank line]
-Line 3 (question): A specific, experience-based question ending with "?". MAX 65 characters.
-Line 4: #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
+Line 3: #buildinpublic plus 1 relevant technical tag. MAX 30 characters.
 
 STRICT RULES:
 - NEVER use em dashes (—). Use hyphens (-) instead.
 - NEVER include any URLs.
-- Line 4 MUST start with #buildinpublic — non-negotiable.
-- Questions must be specific and experience-based — something a senior engineer would actually answer.
+- NEVER include a question anywhere in the tweet.
+- Line 3 MUST start with #buildinpublic — non-negotiable.
 - Use language like: "Got X working", "Wrapped up", "Finally", "Took longer than expected"
 - HARD LIMIT: total tweet under 280 characters including newlines. Count every character.
 - Return ONLY the tweet text — no JSON, no markdown fences, no extra explanation.`;
